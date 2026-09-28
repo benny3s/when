@@ -46,37 +46,8 @@ h1{margin:0;font-size:18px;font-weight:800;letter-spacing:-.035em;line-height:1.
   font:inherit;font-size:15px;line-height:1;width:40px;height:40px;border-radius:999px;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center}
 .iconbtn:active{color:var(--accent);border-color:var(--accent)}
-.iconbtn.spin{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.picker{position:relative}
-.pickbtn{display:inline-flex;align-items:center;gap:7px;appearance:none;
-  border:1px solid var(--line);background:var(--card);color:var(--ink);
-  font:inherit;font-size:13.5px;font-weight:600;padding:8px 13px;border-radius:999px;
-  cursor:pointer;max-width:158px;position:relative;z-index:41}
-.pickbtn .bn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pickbtn .caret{color:var(--muted);font-size:9px;flex:0 0 auto}
-.pickbtn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
-.backdrop{position:fixed;inset:0;z-index:38;background:transparent}
-.menu{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:40;
-  min-width:200px;max-width:min(78vw,300px);
-  background:var(--card);border:1px solid var(--line);border-radius:12px;
-  box-shadow:0 10px 28px rgba(0,0,0,.16);overflow:hidden}
-.menu.open{display:block}
-.menu button{display:flex;width:100%;align-items:center;gap:8px;appearance:none;border:0;
-  background:transparent;color:var(--ink);font:inherit;font-size:14px;
-  padding:12px 14px;text-align:left;cursor:pointer}
-.menu button+button{border-top:1px solid var(--line)}
-.menu button:hover{background:var(--soft)}
-.menu button[aria-selected="true"]{color:var(--accent);font-weight:700}
-.menu .tail{margin-left:auto;font-size:11.5px;color:var(--muted);flex:0 0 auto}
-.menu .note{padding:12px 14px;color:var(--muted);font-size:13px}
 
-.tabs{display:flex;gap:3px;margin:12px 0 16px;background:var(--card);
-  border:1px solid var(--line);border-radius:12px;padding:4px;overflow-x:auto}
-.tabs button{flex:1 0 auto;appearance:none;border:0;background:transparent;color:var(--muted);
-  font:inherit;font-weight:600;font-size:13.5px;padding:9px 10px;border-radius:9px;
-  cursor:pointer;white-space:nowrap}
-.tabs button[aria-selected="true"]{background:var(--soft);color:var(--accent)}
 
 section[hidden],[hidden]{display:none !important}   /* .btn 의 inline-flex 가 hidden 을 이기지 않게 */
 
@@ -109,18 +80,8 @@ section[hidden],[hidden]{display:none !important}   /* .btn 의 inline-flex 가 
 .grid .dh .dow{font-weight:500;color:var(--muted);font-size:10.5px}
 .grid .dh.sun .dow{color:var(--warn)}
 .grid .corner{position:sticky;left:0;z-index:3;background:var(--card)}
-.slot{background:var(--card);touch-action:none;cursor:pointer;min-width:62px;position:relative}
-/* 다른 멤버 중 그 시간에 되는 사람 수 — 칸 오른쪽 위에 작게 */
-.slot .oc{position:absolute;top:2px;right:4px;font-size:10px;font-weight:700;line-height:1;
-  color:var(--muted);pointer-events:none;font-variant-numeric:tabular-nums}
-.slot.on .oc{color:var(--on-accent);opacity:.85}
 /* 날짜 바로 아래 '사유' 줄 */
 .grid .memo{background:var(--card);padding:3px;min-height:36px}
-.memobtn{appearance:none;border:1px dashed var(--line);background:transparent;color:var(--muted);
-  font:inherit;font-size:11px;border-radius:7px;width:100%;min-height:30px;cursor:pointer;
-  touch-action:manipulation;white-space:nowrap}
-.memobtn.has{border-style:solid;border-color:var(--accent);color:var(--accent);font-weight:700}
-.memobtn.mine{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 /* 스프레드시트 표 */
 table.sheet{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:max-content}
 table.sheet th,table.sheet td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);
@@ -151,11 +112,8 @@ table.sheet .nmbtn{appearance:none;border:0;background:transparent;font:inherit;
   font-weight:700;padding:0;text-align:left;cursor:pointer;min-height:42px;width:100%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;touch-action:manipulation}
 table.sheet .nmbtn.add{color:var(--accent);font-weight:600}
-/* 합주 잡힌 날 — 날짜 머리 배지 (2026-09-21 Benny) */
-table.sheet th .dow.hap{color:var(--accent);font-weight:700;font-size:10px;letter-spacing:-.2px}
-table.sheet th.dhead.hasHap{background:rgba(var(--accent-rgb),.07)}
+/* 그 날 창의 '📌 정한 시간' 줄 */
 .dm-hap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
-.dm-hap #dmHapNow{color:var(--accent);font-weight:600;font-size:13.5px}
 .best .b{position:relative}
 .best .bgo{position:absolute;right:10px;top:50%;transform:translateY(-50%);appearance:none;border:1px solid var(--line);
   background:var(--card);border-radius:9px;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);
@@ -170,34 +128,18 @@ table.sheet th.addcol{padding:4px}
 table.sheet th.addcol button{appearance:none;border:1px dashed var(--line);background:transparent;
   color:var(--accent);font:inherit;font-size:11.5px;font-weight:700;border-radius:8px;
   padding:6px 8px;min-height:42px;white-space:nowrap;cursor:pointer}
-table.sheet tr.addrow td{border-right:0}
 table.sheet tfoot td.sum{text-align:center;font-weight:700;font-size:12px;padding:8px 4px;
   color:var(--muted);font-variant-numeric:tabular-nums}
 table.sheet tfoot td.sum.all{color:var(--accent)}
 table.sheet tfoot th{background:var(--soft);font-size:11px;color:var(--muted)}
-.mh{font-size:14px;margin:18px 0 6px}
 .dm-admin{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;margin:0 0 12px;
   background:var(--soft);border-radius:10px}
 .dm-admin select{appearance:none;font:inherit;font-size:14px;padding:8px 6px;border:1px solid var(--line);
   border-radius:9px;background:var(--card);color:var(--ink);min-height:42px;width:58px;text-align:center}
 .dm-admin .u{color:var(--muted);font-size:12px}
-.menu button.mset{color:var(--accent);font-weight:600}
 table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
-.card.on .cardhead .caret{transform:rotate(180deg)}
 
-/* 날짜별 시간대 목록 */
-#winList li{display:flex;align-items:center;gap:6px;padding:7px 0;border-top:1px solid var(--line)}
-#winList li:first-child{border-top:0}
-#winList .wd{flex:1 1 auto;font-weight:600;font-size:13.5px;white-space:nowrap;min-width:0;
-  overflow:hidden;text-overflow:ellipsis}
-#winList .wd.sun{color:var(--warn)}
-#winList select{appearance:none;font:inherit;font-size:14px;font-variant-numeric:tabular-nums;
-  padding:8px 6px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);
-  min-height:42px;width:58px;text-align:center;flex:0 0 auto}
-#winList .u{color:var(--muted);font-size:12px;flex:0 0 auto}
-#winList .cus{font-size:10.5px;color:var(--accent);font-weight:700}
 
-/* 아래에서 올라오는 창 */
 /* 창은 화면 가운데에 뜬다 (2026-09-22i Benny: "하단고정 말고 그냥 띄우면 안돼?")
    바닥에 붙여 두면 내용이 늘 때마다 창이 위로 밀려서 보던 자리가 사라진다. */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.42);
@@ -206,9 +148,7 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 .modal .sheet{background:var(--card);width:100%;max-width:560px;border-radius:18px;
   padding:16px;max-height:88vh;max-height:88dvh;overflow:auto;
   box-shadow:0 12px 40px rgba(0,0,0,.28)}
-.modal#gridModal{z-index:55}
 .modal#heatModal{z-index:58}
-/* 키가 고정된 창 — 내용이 늘어도 창이 안 움직이고 안쪽만 스크롤된다 */
 /* 내용이 늘어나는 창(결과·달력)은 키를 고정한다 — 안쪽만 스크롤되고 창은 안 움직인다 */
 .modal .sheet.fixh{padding:0;overflow:hidden;display:flex;flex-direction:column;
   height:min(90vh,1000px);height:min(90dvh,1000px);max-height:none}
@@ -223,19 +163,11 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
   background:var(--bg)}
 .modal .sheet.tall{max-height:88vh;max-height:88dvh}
 .subh{font-size:14.5px;font-weight:700;margin:14px 0 2px;letter-spacing:-.02em}
-.foldbtn{appearance:none;border:0;background:transparent;color:var(--muted);font-size:14px;min-width:44px;min-height:44px;
-  margin:-8px -8px 0 0;cursor:pointer;flex:0 0 auto}
-.tcol{padding:0}
-.tcol .tbody{padding:0 16px 16px}
-.tcol .cardhead{padding:14px 16px}
-.tcol h2{margin:0}
-.tadd-card{padding:8px}
 .dowrow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px}
 .dowrow button{appearance:none;font:inherit;font-weight:700;font-size:14px;min-height:44px;border-radius:10px;
   border:1px solid var(--line);background:var(--bg);color:var(--ink);touch-action:manipulation}
 .dowrow button.sun{color:var(--warn)} .dowrow button.sat{color:#3a6fb0}
 .dowrow button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.btn.tadd{width:100%;border:1.5px dashed var(--line);background:transparent;border-radius:11px;color:var(--accent);margin:0;min-height:46px}
 .sheettools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .sheettools .btn{flex:1 1 auto}
 /* 시간 칸 — 6개씩 줄바꿈, 숫자를 칸 안에 (24시간제). 시간이 많아지면 아래로 늘어난다 */
@@ -267,32 +199,16 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
   border-top:1px solid var(--line);background:var(--bg)}
 .dmfoot .btn{flex:1 1 0;height:52px;font-size:15px}
 .dmfoot .btn.primary{flex:1.6 1 0}
-/* 곡·회차 수정 창: 목록 위에 아래에서 올라오는 창으로 (2026-09-20 Benny: "수정 누르면 맨 위로 가는 것보다 그 자리에서") */
-#songForm:not([hidden]),#histForm:not([hidden]){position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;
-  max-height:88vh;overflow:auto;z-index:62;border-radius:16px 16px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));
-  box-shadow:0 -8px 28px rgba(0,0,0,.18)}
-.formback{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:61}
 /* 창이 떠 있을 때 뒤 화면이 같이 스크롤되지 않게 (2026-09-20 Benny) */
-.modal .sheet,#songForm,#histForm{overscroll-behavior:contain}
-.modal,.formback{overscroll-behavior:contain;touch-action:none}
+.modal .sheet{overscroll-behavior:contain}
+.modal{overscroll-behavior:contain;touch-action:none}
 .modal .sheet{touch-action:pan-x pan-y}
 html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
-.hpeople .wholine{display:flex;flex-wrap:wrap;gap:4px 6px;margin:2px 0 8px}
-.hpeople .absline{margin:2px 0}
-.hpeople .wholine.und .whob{background:transparent;border:1px dashed var(--line);color:var(--muted);font-weight:500}
 .whob{appearance:none;border:0;background:var(--soft);border-radius:8px;padding:6px 10px;font:inherit;font-size:13.5px;
   font-weight:600;color:var(--ink);cursor:pointer;min-height:34px}
-.hpeople .why{color:var(--muted)}
 .tbar.ro .tb{cursor:default}
 .dm-vmemo{margin:4px 0 0;font-size:14px}
 .dm-state.ok{color:var(--accent)} .dm-state.no{color:var(--warn)} .dm-state.u{color:var(--muted)}
-.seg4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.seg4 button{appearance:none;font:inherit;font-size:13.5px;font-weight:600;min-height:44px;border-radius:11px;
-  border:1px solid var(--line);background:var(--bg);color:var(--muted);touch-action:manipulation;padding:0 4px}
-.seg4 button[aria-checked="true"].m-u{background:var(--ink);border-color:var(--ink);color:var(--card)}
-.seg4 button[aria-checked="true"].m-a{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.seg4 button[aria-checked="true"].m-s{background:var(--soft);border-color:var(--accent);color:var(--accent)}
-.seg4 button[aria-checked="true"].m-n{background:var(--warn);border-color:var(--warn);color:#fff}
 .dm-set{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
 .dm-set summary{cursor:pointer;color:var(--muted);font-size:13px;min-height:42px;display:flex;align-items:center;list-style:none}
 .dm-set summary::-webkit-details-marker{display:none}
@@ -302,9 +218,6 @@ html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
 .dm-row .n{font-weight:700}
 .dm-row .w{color:var(--muted);font-size:12.5px;margin-left:6px}
 .dm-row .m{margin-top:3px}
-.slot.on{background:var(--accent)}
-.slot.alt{background:var(--soft)}
-.slot.alt.on{background:var(--accent)}
 .slot.off,.hcell.off{background:repeating-linear-gradient(135deg,var(--bg) 0 4px,var(--soft) 4px 8px);
   cursor:default;opacity:.55}
 .grid .dh .win{font-weight:500;color:var(--accent);font-size:10.5px}
@@ -379,21 +292,9 @@ html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
 .datechip{display:inline-flex;align-items:center;gap:6px}
 .datechip .x{opacity:.65;font-size:15px;line-height:1}
 
-details.fold{margin-top:12px;border:1px solid var(--line);border-radius:11px;background:var(--bg)}
-details.fold>summary{list-style:none;cursor:pointer;padding:11px 14px;font-size:13.5px;
-  font-weight:600;color:var(--muted);display:flex;align-items:center;gap:7px}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary::before{content:"＋";font-size:14px;color:var(--accent)}
-details.fold[open]>summary::before{content:"−"}
-details.fold[open]>summary{color:var(--ink);border-bottom:1px solid var(--line)}
-details.fold .body{padding:13px 14px 14px;display:flex;flex-direction:column;gap:10px}
-.dash{color:var(--muted);flex:0 0 auto}
 
 /* ── 메모 ── */
 .notes{display:flex;flex-direction:column;gap:8px;margin-top:4px}
-.noterow{display:flex;align-items:center;gap:9px}
-.noterow .nd{flex:0 0 76px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.noterow .nd.none{color:var(--warn);font-weight:600}
 
 input[type=text],input[type=date],input[type=number],input[type=time],select,textarea{
   font:inherit;font-size:16px;padding:12px 13px;border-radius:12px;min-height:48px;
@@ -440,21 +341,12 @@ button, .chip, .btn, a.lnk, .cardhead, .menu button { touch-action: manipulation
 .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:9px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;
   border:1px solid var(--line);vertical-align:-2px;margin-right:5px}
-.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;
-  background:var(--soft);color:var(--accent);font-weight:600;white-space:nowrap}
-.pill.grey{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
-.pill.warn{background:transparent;color:var(--warn);border:1px solid currentColor}
-.pill.amber{background:transparent;color:var(--amber);border:1px solid currentColor}
-ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-ul.plain li{display:flex;align-items:center;gap:8px;font-size:14px}
-ul.plain li .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .best{display:flex;flex-direction:column;gap:9px}
 .best .b{border:1px solid var(--line);border-radius:11px;padding:11px 96px 11px 13px;background:var(--bg)}
 .best .b.top{border-color:var(--accent);background:var(--soft)}
 .best .b .bt{font-weight:700;font-size:14.5px;letter-spacing:-.02em}
 .best .b .bs{color:var(--muted);font-size:12.5px;margin-top:2px}
 .detail{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;font-size:13.5px}
-.detail .lbl{color:var(--muted);font-size:12px;margin-bottom:2px}
 .detail p{margin:0 0 9px}
 .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 6px}
 footer{color:var(--muted);font-size:11.5px;text-align:center;padding:10px 0 4px}
@@ -473,7 +365,7 @@ footer{color:var(--muted);font-size:11.5px;text-align:center;padding:10px 0 4px}
 .hourbtn:active{border-color:var(--accent)}
 /* 지금 보는 약속을 크게 (2026-09-22b Benny: "위에는 그대로라 헷갈림") */
 .eyebrow{margin:0 0 2px;font-size:10.5px;font-weight:800;color:var(--accent);letter-spacing:.02em}
-h2.bigtitle{font-size:22px;font-weight:900;letter-spacing:-.045em;line-height:1.2}
+h2.bigtitle{font-size:22px;font-weight:900;letter-spacing:-.045em;line-height:1.2;overflow-wrap:anywhere}
 /* 누구세요는 늘 연두색으로 눈에 띄게 (2026-09-22b Benny) */
 #whoCard{background:rgba(var(--accent-rgb),.08);border-color:rgba(var(--accent-rgb),.3)}
 #whoCard.need{border-width:2px;border-color:rgba(var(--accent-rgb),.55)}
@@ -511,7 +403,6 @@ table.sheet tr.me td .hr.none{color:var(--accent);opacity:1}
 .callout{display:block;margin:0 0 11px;padding:10px 12px;border-radius:12px;
   background:rgba(var(--accent-rgb),.09);color:var(--ink);font-size:12.5px;line-height:1.5}
 .callout b{color:var(--accent)}
-/* 처음 오는 사람을 위한 1-2-3 (2026-09-22 Benny 시안) */
 /* 칸 바로 아래에 알려주기 (2026-09-22f Benny: "실패 표시가 맨 아래라 안 보인다") */
 .fldmsg{margin:6px 0 0;font-size:12.5px;font-weight:700;line-height:1.4}
 .fldmsg.bad{color:var(--warn)}
@@ -519,6 +410,7 @@ table.sheet tr.me td .hr.none{color:var(--accent);opacity:1}
 .fld input.bad{border-color:var(--warn)}
 .chip.rm{padding-right:9px}
 .chip.rm .x{margin-left:7px;color:var(--muted);font-weight:700}
+/* 처음 오는 사람을 위한 1-2-3 (2026-09-22 Benny 시안) */
 .steps{display:flex;gap:6px;margin:0 0 12px}
 .steps .step{flex:1 1 0;min-width:0;background:rgba(var(--accent-rgb),.07);border-radius:12px;
   padding:11px 10px;display:flex;flex-direction:column;gap:3px}
@@ -532,40 +424,7 @@ table.sheet tr.me td .hr.none{color:var(--accent);opacity:1}
 .more a:hover{border-color:var(--accent)}
 .more a:active{background:rgba(var(--accent-rgb),.22)}
 
-/* ── 곡 / 이력 ── */
-.sec{margin-bottom:18px}
-.sechead{display:flex;align-items:baseline;gap:8px;margin:0 2px 9px}
-.sechead h3{margin:0;font-size:14px;letter-spacing:-.02em}
-.sechead .n{color:var(--muted);font-size:12px}
-.item{background:var(--card);border:1px solid var(--line);border-radius:13px;
-  padding:13px 14px;box-shadow:var(--shadow);margin-bottom:9px}
-.item .ttl{font-weight:700;font-size:15.5px;letter-spacing:-.02em;line-height:1.35}
-.item .meta{color:var(--muted);font-size:12.5px;margin-top:2px}
-.item .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.parts{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
-.cardhead .aside{flex:0 0 auto;align-self:center;font-size:12.5px;color:var(--muted);font-weight:600;
-  max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.heart{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--muted);font:inherit;
-  font-size:13px;font-weight:700;border-radius:999px;padding:0 12px;min-height:38px;cursor:pointer;
-  touch-action:manipulation;font-variant-numeric:tabular-nums}
-.heart.on{color:#d64b6a;border-color:#e9a3b3;background:rgba(214,75,106,.08)}
-#songList .item{padding:10px 12px;margin-bottom:6px}
-#songList .item .ttl{font-size:15px}
-#songList .item .cardhead{min-height:44px}
-.cardhead:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
-.pp{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:3px 8px;border-radius:999px;
-  background:var(--soft);color:var(--ink);line-height:1.3}
-.pp b{color:var(--muted);font-weight:600}
 table.sum .a.ps{color:var(--ink);opacity:.75;white-space:normal}
-.item .body{margin-top:10px;font-size:13.5px;white-space:pre-wrap;line-height:1.55}
-.item .body .k{color:var(--muted);font-size:12px;display:block;margin-bottom:1px}
-/* 여러 줄로 접힐 때 줄 사이가 붙어 있으면 아래 버튼이 눌린다. 줄 간격을 넉넉히. */
-.item .acts{display:flex;gap:10px 4px;flex-wrap:wrap;margin-top:11px;
-  border-top:1px solid var(--line);padding-top:8px}
-a.lnk{display:inline-flex;align-items:center;gap:5px;text-decoration:none;
-  font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;
-  border:1px solid var(--line);color:var(--accent);background:var(--bg)}
-a.lnk::before{content:"▶";font-size:9px}
 /* 한눈에 보기 표 */
 table.sum{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 table.sum th{text-align:left;font-weight:600;font-size:11.5px;color:var(--muted);
@@ -582,43 +441,17 @@ table.sum .a{color:var(--muted);font-size:11.5px;display:block;margin-top:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 table.sum td.n{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px}
 table.sum td.n b{color:var(--ink);font-weight:700}
-table.sum td.mid{color:var(--muted);font-size:12.5px;white-space:nowrap}
 table.sum td.go{color:var(--muted);text-align:right;font-size:15px;line-height:1.2;opacity:.55;padding-left:0}
 table.sum tbody tr:hover td.go{color:var(--accent);opacity:1}
 #whoCard{padding:10px 14px}
 #whoCard:has(#whoPick:not([hidden])){padding:14px 16px}
 .whobar{display:flex;align-items:center;gap:8px}
-.whobar .who-ic{color:var(--accent);font-size:10px}
-.whobar .who-tx{flex:1 1 auto;min-width:0;font-size:14.5px}
-.sessrow{display:flex;align-items:center;gap:8px;margin-top:6px}
-.sessrow .sn{flex:0 0 76px;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sessrow.me .sn{color:var(--accent)}
-.sessrow input{flex:1 1 auto;min-width:0}
-.rolechips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
-.histsec{font-size:12.5px;font-weight:700;color:var(--muted);margin:4px 2px 8px}
-.item.next{border:2px solid var(--accent);background:var(--soft)}
-.item.pastbox{margin-top:18px}
-.item.pastbox .det > .item{margin:8px 0 0;box-shadow:none}
-.item.past .ttl{color:var(--muted)}
-.item.flash{outline:2px solid var(--accent);outline-offset:2px}
 /* 접히는 카드 */
-.cardhead{display:flex;width:100%;align-items:flex-start;gap:10px;appearance:none;border:0;
-  background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}
-.cardhead .hgrow{flex:1 1 auto;min-width:0}
-.cardhead .caret{flex:0 0 auto;color:var(--muted);font-size:11px;margin-top:5px;
-  transition:transform .15s ease}
-.item.on > .cardhead .caret{transform:rotate(180deg);color:var(--accent)}
-.card.on .cardhead .caret{transform:rotate(180deg);color:var(--accent)}
 .arch{border-top:1px solid var(--line);padding-top:11px;margin-top:11px}
 .arch:first-child{border-top:0;padding-top:0;margin-top:0}
 .arch .ad{font-weight:700;font-size:14px}
 .arch .aw{color:var(--muted);font-size:12.5px;margin-top:3px;white-space:pre-wrap;line-height:1.55}
-.item .det{margin-top:2px}
 
-.votebar{display:flex;align-items:center;gap:10px 8px;flex-wrap:wrap;margin-top:11px;
-  border-top:1px solid var(--line);padding-top:8px}
-.votebar .tally{color:var(--muted);font-size:12.5px}
-.songpick{display:flex;flex-wrap:wrap;gap:6px}
 
 /* ═══ 약속 잡자 전용 ═══ */
 [hidden]{display:none !important}
@@ -671,7 +504,6 @@ table.sheet tfoot th.nm{font-size:11px;color:var(--muted);font-weight:600}
 .list .li{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
 .list .li:last-child{border-bottom:0}
 .list .li .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list .li .sub2{display:block;font-weight:400;font-size:11.5px;color:var(--muted);margin-top:1px}
 .list .li .open{appearance:none;border:0;background:transparent;font:inherit;color:inherit;text-align:left;
   cursor:pointer;flex:1 1 auto;min-width:0;padding:4px 0;min-height:42px;font-weight:600;font-size:14px}
 h2 .cnt{color:var(--muted);font-weight:500;font-size:13px;margin-left:4px}
@@ -714,7 +546,6 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
 .adbar .btn{min-height:38px;padding:7px 11px;font-size:13px;
   background:rgba(255,255,255,.18);border-color:transparent;color:inherit}
 .adbar .btn.go{background:#fff;color:var(--warn);border-color:transparent}
-.ad.dying{opacity:.35;pointer-events:none}
 .hourrow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
 .hourrow select{flex:0 0 96px;min-width:0}
 
@@ -1120,12 +951,28 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
   <button class="btn primary" id="saveBtn" type="button" hidden>저장</button>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>/* 약속 잡자 — benny3s.github.io/meet/
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-22s";
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbzwTE7EF4fav3ziLiZn7NNfOmG4XFXfxGxx3x4tkvqsVe2l29Ck6yNMXbYn0gVwmliJpw/exec";
+const BUILD = "2026-09-28a";
+
+/* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
+   · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
+   · meets/{id}/people/{pid} 사람마다 문서 하나 — 각자 자기 문서만 고치니 남의 응답을 덮어쓸 일이 없다
+   · meets/{id}/log/{auto}   📼 저장 기록 (붙이기만, 읽기 불가)
+   규칙: secretary/benny-apps/firestore.rules
+   ⚠️ apiKey 는 비밀이 아니다(웹앱 식별용). 막는 건 규칙이 한다. */
+const FB_CONFIG = {
+  apiKey: "AIzaSyAozzAoVfMmUHCvQQ169fzoYjM_rH1s8K8",
+  authDomain: "benny-apps.firebaseapp.com",
+  projectId: "benny-apps",
+  storageBucket: "benny-apps.firebasestorage.app",
+  messagingSenderId: "495476517157",
+  appId: "1:495476517157:web:36524752d12d47b8b952cc"
+};
 
 /* ═══ 공통 ═══ */
 const $  = s => document.querySelector(s);
@@ -1162,42 +1009,334 @@ function runsOf(list, compact){
 function cell(cls, text){ const el = document.createElement("div"); el.className = cls; if (text) el.textContent = text; return el; }
 function setStatus(msg, cls){ const el = $("#status"); el.textContent = msg; el.className = "st" + (cls ? " " + cls : ""); }
 
-/* ═══ 통신 — JSONP 한 줄로 ═══ */
-let _chain = Promise.resolve(), lastMs = 0;
-function api(params){
-  const run = () => tries(params);
-  const p = _chain.then(run, run);
-  _chain = p.catch(() => {});
-  return p;
+/* ═══ 통신 — Firestore ═══
+   화면 코드는 예전 서버와 똑같이 api({action:…}) 를 부르고 ST 모양의 상태를 돌려받는다.
+   여기서 그 action 들을 Firestore 읽기·쓰기로 바꿔 준다.
+   · 약속을 열면 onSnapshot 으로 지켜본다 → 남이 저장하면 **새로고침 없이** 바로 바뀐다
+   · 쓰기는 로컬에 먼저 반영되고(지연 보정) 서버 확인은 뒤에 온다                        */
+let lastMs = 0;
+const FB_OK = !!(window.firebase && firebase.firestore);
+let db = null, FV = null, FP = null, TS = null;
+if (FB_OK){
+  firebase.initializeApp(FB_CONFIG);
+  db = firebase.firestore();
+  /* ⚠️ enablePersistence 는 쓰지 않는다 (2026-09-28 시험에서 확인)
+     여러 탭 모드에선 모든 요청이 '주 탭' 을 거치는데, 그 탭이 뒤로 가서 멈추면 다른 탭의 get() 이 영영 안 끝났다.
+     카톡 인앱 브라우저의 IndexedDB 도 믿을 게 못 된다. 첫 화면은 localStorage 스냅샷(snapLoad)이 먼저 그린다. */
+  FV = firebase.firestore.FieldValue; FP = firebase.firestore.FieldPath; TS = firebase.firestore.Timestamp;
 }
-const SAFE = ["load", "meet_set", "save"];
-async function tries(params){
-  const safe = !params.action || SAFE.indexOf(params.action) >= 0;
-  const n = safe ? 3 : 1;
-  let last;
-  for (let i = 0; i < n; i++){
-    if (i) await new Promise(r => setTimeout(r, 700 * i));
-    try { return await once(params); }
-    catch(e){ last = e; if (!/네트워크|응답이 없습니다/.test(e.message)) throw e; }
+const meetsCol = () => db.collection("meets");
+const meetRef  = id => meetsCol().doc(id);
+const peopleOf = id => meetRef(id).collection("people");
+
+function fail(msg){ return new Error(msg); }
+function errText(e){
+  const c = (e && e.code) || "";
+  if (/permission-denied/.test(c)) return "저장이 거부됐어요 (값이 너무 길거나 형식이 달라요)";
+  if (/unavailable|deadline/.test(c)) return "네트워크 오류";
+  return (e && e.message) || "오류";
+}
+function withTimeout(p, ms){
+  let t; const to = new Promise((_, rej) => { t = setTimeout(() => rej(fail("응답이 없습니다")), ms); });
+  return Promise.race([p, to]).finally(() => clearTimeout(t));
+}
+async function api(params){
+  if (!FB_OK) throw fail("저장소를 불러오지 못했어요 — 네트워크를 확인하고 새로고침해 주세요");
+  const t0 = Date.now();
+  try {
+    const a = params.action || "load";
+    /* 읽기만 시간 제한. 쓰기는 오프라인이면 줄 서 있다가 연결되면 들어가므로 끊지 않는다 */
+    const r = (a === "load" || a === "meet_all") ? await withTimeout(doAct(params), 45000) : await doAct(params);
+    lastMs = Date.now() - t0;
+    return r;
+  } catch(e){ throw fail(errText(e)); }
+}
+
+/* ── 값 다듬기 (옛 서버 apps-script.gs 와 같은 규칙) ── */
+function clampHour(v, d){ const n = parseInt(v, 10); return (isNaN(n) || n < 0 || n > 24) ? d : n; }
+function normDate(s){ s = String(s || "").trim(); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ""; }
+function splitList(s){ return String(s || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean); }
+function cleanDates(raw){
+  const src = Array.isArray(raw) ? raw : splitList(raw);
+  return Array.from(new Set(src.map(normDate).filter(Boolean))).sort().slice(0, 200);
+}
+function parseWindows(raw){
+  let o; try { o = typeof raw === "string" ? JSON.parse(raw || "{}") : (raw || {}); } catch(e){ return {}; }
+  const out = {}; let n = 0;
+  if (!o || typeof o !== "object") return out;
+  for (const k in o){
+    const d = normDate(k), w = o[k]; if (!d || !w || w.length !== 2) continue;
+    const a = clampHour(w[0], -1), b = clampHour(w[1], -1);
+    if (a < 0 || b < 0 || b <= a) continue;
+    out[d] = [a, b]; if (++n >= 120) break;
   }
-  throw last;
+  return out;
 }
-function once(params){
-  return new Promise((resolve, reject) => {
-    const t0 = Date.now();
-    const cb = "__jp" + Math.random().toString(36).slice(2);
-    const s  = document.createElement("script");
-    const q  = new URLSearchParams(Object.assign({}, params, { callback: cb }));
-    const done = () => { try { delete window[cb]; } catch(e){ window[cb] = undefined; } s.remove(); clearTimeout(t); };
-    const t = setTimeout(() => { done(); reject(new Error("응답이 없습니다")); }, 45000);
-    window[cb] = data => {
-      lastMs = Date.now() - t0; done();
-      (data && data.ok === false) ? reject(new Error(data.error || "오류")) : resolve(data);
-    };
-    s.onerror = () => { done(); reject(new Error("네트워크 오류")); };
-    s.src = ENDPOINT + "?" + q.toString();
-    document.head.appendChild(s);
+function parsePicks(raw){
+  let list = [];
+  if (Array.isArray(raw)) list = raw;
+  else { const t = String(raw || "").trim(); if (t.charAt(0) === "["){ try { list = JSON.parse(t); } catch(e){} } if (!list.length && t) list = t.split(/[\n,]/); }
+  const out = [];
+  list.forEach(v => {
+    v = String(v == null ? "" : v).trim();
+    const m = /^(\d{4}-\d{2}-\d{2}) (\d{2}):00~(\d{2}):00$/.exec(v);
+    if (!m || !normDate(m[1]) || out.includes(v) || out.length >= 20) return;
+    const a = +m[2], b = +m[3];
+    if (a < 0 || b > 24 || b <= a) return;
+    out.push(v);
   });
+  return out.sort();
+}
+function cleanHours(arr){
+  return Array.from(new Set((arr || []).map(x => parseInt(x, 10)).filter(h => h >= 0 && h <= 23))).sort((a, b) => a - b);
+}
+function pad2(n){ return String(n).padStart(2, "0"); }
+/** Timestamp → "2026-09-28T14:03:05" (화면이 쓰던 옛 모양 그대로) */
+function stampOf(ts){
+  if (!ts || !ts.toDate) return "";
+  const o = ts.toDate();
+  return iso(o) + "T" + pad2(o.getHours()) + ":" + pad2(o.getMinutes()) + ":" + pad2(o.getSeconds());
+}
+
+/* ── 지켜보기 ── */
+let live = { id: "" };
+function unwatch(){ (live.unsub || []).forEach(f => { try { f(); } catch(e){} }); live = { id: "" }; }
+function watch(id){
+  if (live.id === id && live.ready && !live.error) return live.ready;
+  unwatch();
+  const L = live = { id, meet: null, meetState: "wait", people: null, peopleCache: true, unsub: [], done: false };
+  let ok, bad;
+  L.ready = new Promise((a, b) => { ok = a; bad = b; });
+  const check = () => {
+    if (live !== L) return;
+    const meetOk = L.meetState !== "wait";
+    /* 캐시에 사람이 0명이면 진짜 0명인지 서버를 기다린다 (처음 여는 기기) */
+    const peopleOk = L.people && (!L.peopleCache || L.people.length || L.meetState === "ok");
+    if (!meetOk || !peopleOk) return;
+    if (!L.done){ L.done = true; ok(); } else onLive();
+  };
+  const onErr = e => { if (live !== L) return; L.error = e; if (!L.done){ L.done = true; bad(e); } else setStatus("실시간 연결 끊김 — ↻ 를 눌러주세요", "err"); };
+  L.unsub.push(meetRef(id).onSnapshot({ includeMetadataChanges: true }, s => {
+    if (!s.exists && s.metadata.fromCache && L.meetState === "wait") return;   // 캐시에 없음 ≠ 없는 약속
+    L.meet = s.exists ? s.data({ serverTimestamps: "estimate" }) : null;
+    L.meetState = s.exists ? "ok" : "gone";
+    check();
+  }, onErr));
+  L.unsub.push(peopleOf(id).onSnapshot({ includeMetadataChanges: true }, s => {
+    L.people = s.docs.map(d => Object.assign({ _id: d.id }, d.data({ serverTimestamps: "estimate" })));
+    L.peopleCache = s.metadata.fromCache;
+    check();
+  }, onErr));
+  return L.ready;
+}
+/** 지켜보던 약속이 바뀌었을 때 — 입력 중인 내 칸은 loadMine 이 알아서 지킨다 */
+function onLive(){
+  if (!M || live.id !== M) return;
+  const st = buildST();
+  if (st.gone){ ST = st; setStatus("이 약속은 지워졌어요", "err"); showNew(); return; }
+  ST = st; absorb();
+}
+function buildST(){
+  const out = { meet: null, members: [], dates: [], hourStart: 10, hourEnd: 22,
+                windows: {}, hours: {}, notes: {}, edited: {}, picks: [], pid: {} };
+  const m = live.meet;
+  if (!m){ if (live.meetState === "gone") out.gone = true; return out; }
+  out.meet = { id: live.id, title: m.title || "", place: m.place || "", memo: m.memo || "",
+               fixed: m.fixed || "", owner: m.owner || "", made: m.made || "" };
+  out.hourStart = clampHour(m.hourStart, 10);
+  out.hourEnd   = clampHour(m.hourEnd, 22);
+  if (out.hourEnd <= out.hourStart){ out.hourStart = 10; out.hourEnd = 22; }
+  out.dates   = cleanDates(m.dates || []);
+  out.windows = parseWindows(m.windows || {});
+  out.picks   = parsePicks(m.picks || []);
+  const ms = t => (t && t.toMillis) ? t.toMillis() : Infinity;
+  (live.people || []).slice().sort((a, b) => ms(a.added) - ms(b.added)).forEach(p => {
+    const n = String(p.name || "").trim();
+    if (!n || out.pid[n]) return;                  // 같은 이름이 둘이면 먼저 들어온 쪽
+    out.members.push(n); out.pid[n] = p._id;
+    const H = {}, N = {};
+    for (const d in (p.hours || {})) if (Array.isArray(p.hours[d])) H[d] = cleanHours(p.hours[d]);
+    for (const d in (p.notes || {})) if (p.notes[d]) N[d] = String(p.notes[d]);
+    if (Object.keys(H).length) out.hours[n] = H;
+    if (Object.keys(N).length) out.notes[n] = N;
+    const e = stampOf(p.edited); if (e) out.edited[n] = e;
+  });
+  return out;
+}
+function pidOf(n){ return buildST().pid[n] || ""; }
+function newPerson(name, extra){
+  return Object.assign({ name: name, hours: {}, notes: {}, edited: null, added: TS.now() }, extra || {});
+}
+async function titleTakenRemote(title, skipId){
+  const k = titleKeyOf(title);
+  if (!k) return false;
+  const q = await meetsCol().where("titleKey", "==", k).limit(3).get();
+  return q.docs.some(d => d.id !== skipId);
+}
+
+/** 약속 여러 개를 사람 문서까지 같이 지운다. (저장 기록 log 는 남는다 — 되살릴 때 쓴다) */
+async function removeMeets(ids){
+  for (const id of ids){
+    const ps = await peopleOf(id).get();
+    const refs = ps.docs.map(d => d.ref).concat([meetRef(id)]);
+    for (let i = 0; i < refs.length; i += 400){
+      const b = db.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit();
+    }
+  }
+}
+
+/** 목록 — full 이면 관리 화면용으로 참여자·응답 수·마지막 수정까지 */
+async function listMeets(full){
+  const qs = await meetsCol().get();
+  const rows = qs.docs.map(d => {
+    const m = d.data(), ds = cleanDates(m.dates || []);
+    return { id: d.id, title: m.title || "", place: m.place || "", memo: m.memo || "", fixed: m.fixed || "",
+             owner: m.owner || "", made: m.made || "", edited: "", members: [], answered: 0,
+             dates: ds.length, from: ds[0] || "", to: ds[ds.length - 1] || "" };
+  });
+  if (full) await Promise.all(rows.map(async r => {
+    const ps = await peopleOf(r.id).get();
+    ps.docs.map(x => x.data()).sort((a, b) => ((a.added && a.added.toMillis()) || 0) - ((b.added && b.added.toMillis()) || 0))
+      .forEach(p => {
+        if (!p.name || r.members.includes(p.name)) return;
+        r.members.push(p.name);
+        if (Object.keys(p.hours || {}).length) r.answered++;
+        const e = stampOf(p.edited); if (e > r.edited) r.edited = e;
+      });
+  }));
+  return rows;
+}
+
+async function doAct(p){
+  const a = p.action || "load";
+  const id = String(p.m || "").trim();
+
+  if (a === "load"){
+    if (!id) return buildST();
+    await watch(id);
+    return buildST();
+  }
+  if (a === "meet_all") return { ok: true, meets: await listMeets(!!p.full) };
+
+  if (a === "meet_new"){
+    const title = String(p.title || "").trim().slice(0, 60);
+    if (!title) throw fail("약속 이름을 적어주세요");
+    if (await titleTakenRemote(title, "")) throw fail("“" + title + "” 은 이미 있는 이름이에요. 다른 이름으로 해주세요");
+    let hs = clampHour(p.hourStart, 10), he = clampHour(p.hourEnd, 22);
+    if (he <= hs){ hs = 10; he = 22; }
+    const who = String(p.who || "").trim().slice(0, 30);
+    const ref = meetsCol().doc();
+    const b = db.batch();
+    b.set(ref, { title, titleKey: titleKeyOf(title), place: String(p.place || "").slice(0, 60), memo: "", fixed: "",
+                 hourStart: hs, hourEnd: he, dates: cleanDates(p.dates), windows: {}, picks: [],
+                 owner: who, made: todayIso(), createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp() });
+    /* 만들 때 친구들까지 한 번에. 순서가 섞이지 않게 added 를 1ms 씩 띄운다 */
+    const names = [];
+    [who].concat(splitList(p.members)).forEach(n => { n = n.slice(0, 30); if (n && !names.includes(n) && names.length < 30) names.push(n); });
+    const t0 = Date.now();
+    names.forEach((n, i) => b.set(peopleOf(ref.id).doc(), newPerson(n, { added: TS.fromMillis(t0 + i) })));
+    await b.commit();
+    await watch(ref.id);
+    return Object.assign(buildST(), { newId: ref.id });
+  }
+
+  if (a === "meet_remove_many"){
+    const ids = Array.from(new Set(splitList(p.ids))).slice(0, 50);
+    if (!ids.length) throw fail("지울 약속을 고르지 않았습니다");
+    await removeMeets(ids);
+    return { ok: true, done: true, removed: ids.length, ids };
+  }
+
+  if (!id) throw fail("없는 약속입니다 (링크를 확인해주세요)");
+  await watch(id);
+  if (live.meetState !== "ok") throw fail("없는 약속입니다 (링크를 확인해주세요)");
+  const cur = buildST();
+
+  if (a === "meet_set"){
+    const up = { updatedAt: FV.serverTimestamp() };
+    if (p.title !== undefined){
+      const t = String(p.title).trim().slice(0, 60);
+      if (!t) throw fail("약속 이름을 적어주세요");
+      if (titleKeyOf(t) !== titleKeyOf(cur.meet.title) && await titleTakenRemote(t, id)) throw fail("“" + t + "” 은 이미 있는 이름이에요");
+      up.title = t; up.titleKey = titleKeyOf(t);
+    }
+    if (p.place !== undefined) up.place = String(p.place).slice(0, 60);
+    if (p.memo  !== undefined) up.memo  = String(p.memo).slice(0, 200);
+    if (p.fixed !== undefined) up.fixed = String(p.fixed).slice(0, 60);
+    if (p.hourStart !== undefined || p.hourEnd !== undefined){
+      const hs = clampHour(p.hourStart !== undefined ? p.hourStart : cur.hourStart, 10);
+      const he = clampHour(p.hourEnd   !== undefined ? p.hourEnd   : cur.hourEnd, 22);
+      if (he <= hs) throw fail("끝 시간이 시작보다 늦어야 해요");
+      up.hourStart = hs; up.hourEnd = he;
+    }
+    if (p.dates   !== undefined) up.dates   = cleanDates(p.dates);
+    if (p.windows !== undefined) up.windows = parseWindows(p.windows);
+    if (p.picks   !== undefined) up.picks   = parsePicks(p.picks);
+    await meetRef(id).update(up);
+    return buildST();
+  }
+
+  if (a === "member_add"){
+    const n = String(p.name || "").trim().slice(0, 30);
+    if (!n) throw fail("이름이 필요합니다");
+    if (cur.pid[n]) throw fail("이미 있는 이름입니다");
+    await peopleOf(id).add(newPerson(n));
+    return buildST();
+  }
+  if (a === "member_rename"){
+    const from = String(p.from || "").trim(), to = String(p.to || "").trim().slice(0, 30);
+    if (!from || !to) throw fail("이름이 필요합니다");
+    if (cur.pid[to]) throw fail("이미 있는 이름입니다");
+    if (!cur.pid[from]) throw fail("없는 사람입니다");
+    await peopleOf(id).doc(cur.pid[from]).update({ name: to });
+    return buildST();
+  }
+  if (a === "member_remove"){
+    const n = String(p.name || "").trim();
+    if (cur.pid[n]) await peopleOf(id).doc(cur.pid[n]).delete();
+    return buildST();
+  }
+
+  if (a === "save"){
+    const name = String(p.name || "").trim().slice(0, 30);
+    if (!name) throw fail("이름이 필요합니다");
+    const body = JSON.parse(p.payload || "{}");
+    const ph = body.hours || {}, pn = body.notes || {};
+    const b = db.batch();
+    const pid = cur.pid[name];
+    if (!pid){
+      /* 처음 응답하는 사람은 자동으로 참여자가 된다 — 문서를 통째로 만든다 */
+      const H = {}, N = {};
+      for (const d in ph) if (normDate(d) && ph[d] !== null) H[d] = cleanHours(ph[d]);
+      for (const d in pn) if (normDate(d) && String(pn[d] || "").trim()) N[d] = String(pn[d]).trim().slice(0, 200);
+      b.set(peopleOf(id).doc(), newPerson(name, { hours: H, notes: N, edited: FV.serverTimestamp() }));
+    } else {
+      /* 보낸 날짜만 고친다 — 안 보낸 날짜(후보에서 빠진 날 등)의 응답은 그대로 둔다 */
+      const args = [];
+      for (const d in ph) if (normDate(d)) args.push(new FP("hours", d), ph[d] === null ? FV.delete() : cleanHours(ph[d]));
+      for (const d in pn) if (normDate(d)){ const t = String(pn[d] || "").trim().slice(0, 200); args.push(new FP("notes", d), t ? t : FV.delete()); }
+      args.push("edited", FV.serverTimestamp());
+      b.update.apply(b, [peopleOf(id).doc(pid)].concat(args));
+    }
+    /* 📼 저장 기록 — 무엇을 보냈는지 그대로 남긴다 (옛 시트의 '기록' 탭) */
+    b.set(meetRef(id).collection("log").doc(), { at: FV.serverTimestamp(), name, payload: JSON.stringify(body).slice(0, 6000) });
+    await b.commit();
+    return buildST();
+  }
+
+  if (a === "meet_remove"){
+    await removeMeets([id]);
+    return { ok: true, gone: true };
+  }
+
+  if (a === "reset_answers"){
+    const b = db.batch();
+    Object.values(cur.pid).forEach(pid => b.update(peopleOf(id).doc(pid), { hours: {}, notes: {}, edited: null }));
+    await b.commit();
+    return buildST();
+  }
+
+  throw fail("unknown action: " + a);
 }
 
 /* ═══ 상태 ═══ */
@@ -1270,7 +1409,7 @@ async function loadAdmin(){
   box.innerHTML = '<div class="card"><p class="hint" style="margin:0">불러오는 중…</p></div>';
   setStatus("약속 목록 불러오는 중…");
   try {
-    const r = await api({ action:"meet_all" });
+    const r = await api({ action:"meet_all", full:1 });
     adRows = r.meets || [];
     setStatus("최신 상태", "ok");
   } catch(e){
@@ -1540,12 +1679,9 @@ async function load(fresh){
   if (!M){ showNew(); return; }
   setStatus(ST.meet ? "최신 확인 중…" : "불러오는 중…");
   try {
-    /* ⚠️ ↻ 에 fresh:1 을 주지 않는다 — 서버가 캐시를 **전부 비우고** 시트 6장을 다시 읽어
-       10~20초가 걸린다. v9 부터는 쓸 때마다 캐시가 같이 갱신되고, 읽기가 옛 값을 되쓰지도
-       않으므로 그냥 읽어도 늘 최신이다. (2026-09-22s Benny: "새로고침하는데 한세월이야")
-       캐시가 정말 어긋났을 때만 주소에 ?fresh=1 을 붙여 강제로 비운다. */
-    const hard = fresh && /[?&]fresh=1/.test(location.search);
-    ST = await api(hard ? { action:"load", m:M, fresh:1 } : { action:"load", m:M });
+    /* Firestore 는 열어 둔 약속을 계속 지켜본다(onSnapshot) → ↻ 는 연결이 끊겼을 때만 다시 붙는다 */
+    if (fresh && live.error) unwatch();
+    ST = await api({ action:"load", m:M });
     if (ST.gone){ setStatus("없는 약속이에요 — 링크를 확인해주세요", "err"); showNew(); return; }
     /* 이름은 기억하지 않는다 — 약속을 옮기면 '누구세요' 에서 다시 고른다.
        (이 페이지에서 이미 고른 이름은 그대로 두고, 명단에서 사라졌으면 비운다) */
@@ -1561,6 +1697,7 @@ async function load(fresh){
 
 /* ═══ 화면 ═══ */
 function showNew(){
+  if (!M) unwatch();                       // 약속을 떠났으면 지켜보기도 끊는다
   const ad = isAdmin();
   $("#view-new").hidden = ad;
   $("#view-admin").hidden = !ad;
@@ -2464,8 +2601,11 @@ function pushModalState(id){
 }
 /** ✕ 나 ESC 로 닫았을 때 — 우리가 밀어 넣은 칸을 되감는다 */
 function popModalState(){
-  if (modalNav > 0){ modalNav--; try { history.back(); } catch(e){} }
+  if (modalNav > 0){ modalNav--; ignorePop++; try { history.back(); } catch(e){ ignorePop--; } }
 }
+/* ⚠️ 위의 history.back() 도 popstate 를 부른다. 그걸 '사용자 뒤로가기' 로 읽으면
+   창이 겹쳐 있을 때(달력 위 시각 고르기) **아래 창까지** 닫혔다 → 우리가 되감은 건 한 번 무시한다 (2026-09-28) */
+let ignorePop = 0;
 function anyModalOpen(){
   return ["hourModal","friendModal","dayModal","calModal","heatModal","setModal","pickModal"].find(id => {
     const el = $("#" + id); return el && !el.hidden;
@@ -2610,6 +2750,7 @@ function goHome(){
 /* ═══ 이벤트 ═══ */
 $("#reloadBtn").onclick = () => load(true);
 window.addEventListener("popstate", () => {
+  if (ignorePop > 0){ ignorePop--; return; }
   /* 창이 떠 있으면 뒤로가기는 그 창만 닫는다 (페이지는 그대로) */
   const openId = anyModalOpen();
   if (openId){
@@ -2832,8 +2973,8 @@ $$(".modal").forEach(m => m.addEventListener("click", e => {
   if (e.target !== m) return;                       // 내용 안쪽 클릭은 무시
   if (m.id === "dayModal") closeDay(); else closeModal(m.id);
 }));
-["calModal","heatModal","setModal","pickModal","hourModal"].forEach(id =>
-  $("#" + id).addEventListener("click", e => { if (e.target.id === id) closeModal(id); }));
+/* ⚠️ 창마다 배경 클릭 핸들러를 하나 더 달면 closeModal 이 두 번 불려 history.back 도 두 번 된다
+   (뒤로 한 칸 더 가서 약속 화면을 떠나 버린다) — 위의 공통 핸들러 하나만 둔다 (2026-09-28) */
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   const open = anyModalOpen();
@@ -2947,7 +3088,6 @@ function openFriend(){
   setTimeout(() => { try { $("#fmInput").focus(); } catch(e){} }, 120);
 }
 $("#whoFriend").onclick  = openFriend;
-$("#whoFriend").onclick  = openFriend;
 $("#whoFriend2").onclick = openFriend;
 
 
@@ -3013,6 +3153,10 @@ $("#n_make").onclick = async () => {
   if (!who){ setStatus("내 이름을 적어주세요", "err"); $("#n_who").focus(); return; }
   if (b <= a){ setStatus("끝 시간이 시작보다 늦어야 해요", "err"); return; }
   const ds = Array.from(dsel).sort();
+  /* 만드는 동안 버튼을 잠근다 — 연타·Enter 두 번이면 같은 약속이 둘 생겼다 (학습 노트 10-5 체크리스트) */
+  const mk = $("#n_make");
+  if (mk.disabled) return;
+  mk.disabled = true;
   setStatus("만드는 중…");
   try {
     ST = await api({ action:"meet_new", title, who, place:$("#n_place").value.trim(),
@@ -3023,28 +3167,17 @@ $("#n_make").onclick = async () => {
     if (!M) throw new Error("약속 id 를 받지 못했습니다");
     me = who;
     try { localStorage.setItem("meet_lastname", who); } catch(e){}   // 다음에 이름칸을 채워준다
-    const miss = newMem.filter(n => n !== who && !(ST.members || []).includes(n));
     /* 목록 캐시는 버리지 말고 새 약속을 끼워 넣는다 — 다음 중복 검사가 바로 된다 */
-    const row = { id:M, title, place:$("#n_place").value.trim(), members:[who].concat(miss),
+    const row = { id:M, title, place:$("#n_place").value.trim(), members:(ST.members || []).slice(),
                   answered:0, dates:ds.length, from:ds[0] || "", to:ds[ds.length-1] || "",
                   fixed:"", memo:"", owner:who, made:todayIso(), edited:"" };
     pickRows = (pickRows || listSnapLoad() || []).filter(x => x.id !== M).concat([row]);
     listSnapSave(pickRows);
     newMem = []; renderNewMem(); showTitleMsg("");
     history.replaceState(null, "", location.pathname + "?m=" + M);
-    /* 화면을 먼저 보여준다 — 남은 멤버는 뒤에서 넣는다 (2026-09-22i Benny: "생성 너무 오래걸려") */
-    if (miss.length) miss.forEach(n => { if (!ST.members.includes(n)) ST.members.push(n); });
     loadMine(true); renderAll(); snapSave();
     if (ds.length){ setStatus("만들었어요 ✓ 링크를 친구들에게 보내세요", "ok"); }
     else { setStatus("만들었어요 ✓ 날짜를 골라주세요", "ok"); openModal("calModal"); }
-    /* 🛟 서버가 아직 v7 이면 members 를 모른다 → 빠진 사람만 뒤에서 하나씩 넣는다.
-       v8 을 배포하면 miss 가 비어서 이 우회로는 그냥 안 쓰인다. */
-    if (miss.length){
-      (async () => {
-        for (const n of miss){ try { await api({ action:"member_add", m:M, name:n }); } catch(e){} }
-        try { ST = await api({ action:"load", m:M }); loadMine(); renderAll(); snapSave(); } catch(e){}
-      })();
-    }
   } catch(e){
     /* 이름 중복 같은 건 칸 바로 아래에 보여준다 */
     if (/이미 있는 이름|이름을 적어/.test(e.message)){
@@ -3052,12 +3185,16 @@ $("#n_make").onclick = async () => {
       $("#n_title").focus(); $("#n_title").scrollIntoView({ behavior:"smooth", block:"center" });
       setStatus("");
     } else setStatus("실패 — " + e.message, "err");
-  }
+  } finally { mk.disabled = false; }
 };
 ["n_title","n_who","n_place"].forEach(id =>
   $("#" + id).addEventListener("keydown", e => { if (e.key === "Enter") $("#n_make").click(); }));
 
 window.addEventListener("beforeunload", e => { if (dirty){ e.preventDefault(); e.returnValue = ""; } });
+/* 폰에서 한참 뒤에 두었다 돌아오면 실시간 연결이 끊겨 있을 수 있다 → 끊겼을 때만 다시 붙는다 */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && M && live.error) load(true);
+});
 
 /* ═══ 앱 안 브라우저 (카톡·인스타·네이버 …) ═══
    카톡 브라우저는 캐시·localStorage 를 거의 안 남겨서 열 때마다 서버를 처음부터 기다린다.

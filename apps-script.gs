@@ -1,5 +1,5 @@
 /**
- * 약속 잡자 (meet) — Google Apps Script 웹앱 (v8)
+ * 약속 잡자 (meet) — Google Apps Script 웹앱 (v10) — ⚠️ 2026-09-28 부터 안 씀. Firestore(benny-apps)로 이사했다
  *
  * benny3s.github.io/meet/ 의 저장소. 밴드매니저의 '캘린더'만 떼어내 만들었습니다.
  * 약속 하나 = 링크 하나(`?m=<약속id>`). **목록은 절대 내려주지 않습니다** — 링크를 아는 사람만 봅니다.
