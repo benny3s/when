@@ -128,9 +128,6 @@ table.sheet th.addcol{padding:4px}
 table.sheet th.addcol button{appearance:none;border:1px dashed var(--line);background:transparent;
   color:var(--accent);font:inherit;font-size:11.5px;font-weight:700;border-radius:8px;
   padding:6px 8px;min-height:42px;white-space:nowrap;cursor:pointer}
-table.sheet tfoot td.sum{text-align:center;font-weight:700;font-size:12px;padding:8px 4px;
-  color:var(--muted);font-variant-numeric:tabular-nums}
-table.sheet tfoot td.sum.all{color:var(--accent)}
 table.sheet tfoot th{background:var(--soft);font-size:11px;color:var(--muted)}
 .dm-admin{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;margin:0 0 12px;
   background:var(--soft);border-radius:10px}
@@ -179,26 +176,25 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 .tbar .tb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .tbar .tb.x{background:rgba(180,71,47,.10);border-color:rgba(180,71,47,.22);color:var(--warn);font-size:18px}
 .tbar .tb::before,.tbar .tb.last::after{content:none}
-.dm-state{font-weight:800;font-size:15px}
-/* 그 날 창 가운데 — 내 일정 요약 (2026-09-22e) */
-.dmme{margin:12px 0 4px;padding:13px 14px;border-radius:14px;
-  background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.28)}
-.dmme .tbar-wrap{padding:0}
-.dmme .btn.wide{height:50px;font-size:15px}
-.dmme .dmwho{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
-.dmme .dmwho b{font-size:14px;font-weight:800;letter-spacing:-.02em}
-.dmme .dmwho .hint{margin:0;flex:1 1 auto;text-align:right;font-size:11.5px}
-.dmme .fld>span{font-weight:600}
-.dmme .dmfoot{margin:13px -14px -13px;padding:12px 14px;background:transparent;
-  border-top:1px solid rgba(var(--accent-rgb),.25);border-radius:0 0 13px 13px}
-.dmme input[type=text]{background:var(--card)}
-#dmOthers .dm-row.you{background:rgba(var(--accent-rgb),.10);border-radius:10px;
-  margin:0 -8px;padding-left:8px;padding-right:8px}
-/* 그 날 창 아래 — 취소 / 저장 (2026-09-22 Benny) */
-.dmfoot{display:flex;gap:9px;margin:14px -16px 0;padding:13px 16px;
-  border-top:1px solid var(--line);background:var(--bg)}
-.dmfoot .btn{flex:1 1 0;height:52px;font-size:15px}
-.dmfoot .btn.primary{flex:1.6 1 0}
+/* 그 날 창 — ○ △ ✕ 세 개만 (2026-09-28 Benny: "버튼 누르는 횟수를 최소화") */
+.oxpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 0}
+.ox{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  height:84px;border-radius:16px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;
+  font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);touch-action:manipulation;padding:0}
+.ox .mk{font-size:30px;line-height:1;font-weight:700}
+.ox.o .mk{color:var(--accent)} .ox.t .mk{color:var(--amber)} .ox.x .mk{color:var(--warn)}
+.ox:active{transform:scale(.97)}
+.ox.o[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.ox.o[aria-pressed="true"] .mk{color:var(--on-accent)}
+.ox.t[aria-pressed="true"]{background:rgba(138,109,31,.12);border-color:var(--amber)}
+.ox.x[aria-pressed="true"]{background:rgba(180,71,47,.10);border-color:var(--warn)}
+#dmMore{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+#dmMore .btn.wide{height:52px;font-size:15.5px}
+.dm-hint{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
+.dm-hint.ok{color:var(--accent)}
+.dm-clear{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;display:block;margin:14px auto 0;padding:6px 10px}
+table.sheet td button.ro{cursor:default}
 /* 창이 떠 있을 때 뒤 화면이 같이 스크롤되지 않게 (2026-09-20 Benny) */
 .modal .sheet{overscroll-behavior:contain}
 .modal{overscroll-behavior:contain;touch-action:none}
@@ -206,18 +202,9 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
 .whob{appearance:none;border:0;background:var(--soft);border-radius:8px;padding:6px 10px;font:inherit;font-size:13.5px;
   font-weight:600;color:var(--ink);cursor:pointer;min-height:34px}
-.tbar.ro .tb{cursor:default}
-.dm-vmemo{margin:4px 0 0;font-size:14px}
-.dm-state.ok{color:var(--accent)} .dm-state.no{color:var(--warn)} .dm-state.u{color:var(--muted)}
-.dm-set{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
-.dm-set summary{cursor:pointer;color:var(--muted);font-size:13px;min-height:42px;display:flex;align-items:center;list-style:none}
-.dm-set summary::-webkit-details-marker{display:none}
-.dm-set[open] summary{color:var(--ink)}
-.dm-sum{color:var(--muted);font-size:12.5px;margin:2px 0 12px}
-.dm-row{padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}
-.dm-row .n{font-weight:700}
-.dm-row .w{color:var(--muted);font-size:12.5px;margin-left:6px}
-.dm-row .m{margin-top:3px}
+.dm-set{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.dm-set.solo{margin-top:0;border-top:0;padding-top:0}
+.dm-sum{color:var(--muted);font-size:13px;margin:2px 0 12px}
 .slot.off,.hcell.off{background:repeating-linear-gradient(135deg,var(--bg) 0 4px,var(--soft) 4px 8px);
   cursor:default;opacity:.55}
 .grid .dh .win{font-weight:500;color:var(--accent);font-size:10.5px}
@@ -346,8 +333,6 @@ button, .chip, .btn, a.lnk, .cardhead, .menu button { touch-action: manipulation
 .best .b.top{border-color:var(--accent);background:var(--soft)}
 .best .b .bt{font-weight:700;font-size:14.5px;letter-spacing:-.02em}
 .best .b .bs{color:var(--muted);font-size:12.5px;margin-top:2px}
-.detail{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;font-size:13.5px}
-.detail p{margin:0 0 9px}
 .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 6px}
 footer{color:var(--muted);font-size:11.5px;text-align:center;padding:10px 0 4px}
 /* 만든 사람의 다른 프로젝트로 (2026-09-21 Benny) */
@@ -424,29 +409,9 @@ table.sheet tr.me td .hr.none{color:var(--accent);opacity:1}
 .more a:hover{border-color:var(--accent)}
 .more a:active{background:rgba(var(--accent-rgb),.22)}
 
-table.sum .a.ps{color:var(--ink);opacity:.75;white-space:normal}
-/* 한눈에 보기 표 */
-table.sum{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
-table.sum th{text-align:left;font-weight:600;font-size:11.5px;color:var(--muted);
-  padding:0 5px 7px;border-bottom:1px solid var(--line);white-space:nowrap}
-table.sum th.n,table.sum td.n{text-align:right}
-table.sum td{padding:9px 5px;border-bottom:1px solid var(--line);vertical-align:top;
-  overflow:hidden;text-overflow:ellipsis}
-table.sum tbody tr:last-child td{border-bottom:0}
-table.sum tbody tr{cursor:pointer}
-table.sum tbody tr:hover td{background:var(--soft)}
-table.sum .t{font-weight:600;letter-spacing:-.01em;line-height:1.35;
-  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-table.sum .a{color:var(--muted);font-size:11.5px;display:block;margin-top:1px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-table.sum td.n{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px}
-table.sum td.n b{color:var(--ink);font-weight:700}
-table.sum td.go{color:var(--muted);text-align:right;font-size:15px;line-height:1.2;opacity:.55;padding-left:0}
-table.sum tbody tr:hover td.go{color:var(--accent);opacity:1}
 #whoCard{padding:10px 14px}
 #whoCard:has(#whoPick:not([hidden])){padding:14px 16px}
 .whobar{display:flex;align-items:center;gap:8px}
-/* 접히는 카드 */
 .arch{border-top:1px solid var(--line);padding-top:11px;margin-top:11px}
 .arch:first-child{border-top:0;padding-top:0;margin-top:0}
 .arch .ad{font-weight:700;font-size:14px}
@@ -761,37 +726,28 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
       </span>
     </div>
     <p class="dm-sum" id="dmSum"></p>
-    <!-- 가운데: 내 일정 (요약 / 입력) — 둘 다 같은 연두 박스 (2026-09-22f Benny: "일관성") -->
-    <div id="dmSummary" class="dmme">
-      <div class="dmwho"><b id="dmMyWho"></b><span class="hint" id="dmMyEdited"></span></div>
-      <div class="dm-state" id="dmMyState" style="margin-bottom:8px"></div>
-      <div class="tbar-wrap"><div class="tbar ro" id="dmMyBar"></div></div>
-      <p class="dm-vmemo" id="dmMyMemo" hidden></p>
-      <button class="btn primary wide" id="dmEditBtn" type="button" style="margin-top:12px">✏ 내 시간 입력하기</button>
-    </div>
     <div id="dmNoName" hidden>
       <p class="hint" style="margin:6px 0 10px">이 날 시간을 입력하려면 이름을 먼저 골라주세요.</p>
       <button class="btn primary" id="dmName" type="button" style="margin-bottom:12px">이름 고르기 →</button>
     </div>
-    <div id="dmMine" class="dmme" hidden>
-      <div class="dmwho"><b id="dmEditWho"></b><span class="hint">입력하는 중</span></div>
-      <div class="dm-state" id="dmState" style="margin-bottom:8px">미정</div>
-      <div class="tbar-wrap"><div class="tbar" id="dmHours"></div></div>
-      <div class="row tight" style="margin-top:10px">
-        <button class="btn sm" id="dmClear" type="button">미정</button>
-        <button class="btn sm soft" id="dmYes" type="button">✓ 가능</button>
-        <button class="btn sm" id="dmNo" type="button" style="color:var(--warn)">✗ 이 날 안 돼요</button>
+    <!-- 내 입력만 — ○ 는 한 번에 끝, △ 는 시간+이유, ✕ 는 이유만 (2026-09-28 Benny) -->
+    <div id="dmMine" hidden>
+      <div class="oxpick" role="group" aria-label="이 날 되나요?">
+        <button class="ox o" id="dmO" type="button" aria-pressed="false"><span class="mk">○</span><span>돼요</span></button>
+        <button class="ox t" id="dmT" type="button" aria-pressed="false"><span class="mk">△</span><span>일부만</span></button>
+        <button class="ox x" id="dmX" type="button" aria-pressed="false"><span class="mk">✕</span><span>안 돼요</span></button>
       </div>
-      <label class="fld" style="margin:12px 0 0"><span>메모 (선택) · 다른 사람에게 보입니다</span>
-        <input type="text" id="dmInput" maxlength="200" placeholder="예: 21시 넘어야 도착해요"></label>
-      <div class="dmfoot">
-        <button class="btn" id="dmCancel" type="button">취소</button>
-        <button class="btn primary" id="dmSave" type="button">저장</button>
+      <div id="dmMore" hidden>
+        <div id="dmHoursBox">
+          <p class="dm-hint" id="dmState">되는 시간을 눌러주세요</p>
+          <div class="tbar-wrap"><div class="tbar" id="dmHours"></div></div>
+        </div>
+        <input type="text" id="dmInput" maxlength="200" placeholder="이유 (선택)" aria-label="이유 (선택)">
+        <button class="btn primary wide" id="dmSave" type="button">저장</button>
       </div>
+      <button class="dm-clear" id="dmClear" type="button" hidden>미정으로 되돌리기</button>
     </div>
-    <div id="dmOthers"></div>
-    <details class="dm-set" id="dmSet">
-      <summary>⚙ 이 날 설정 — 시간대 · 확정 · 후보에서 빼기</summary>
+    <div class="dm-set" id="dmSet" hidden>
       <div class="dm-admin">
         <span class="hint" style="margin:0">이 날 시간</span>
         <span id="dmWin"></span>
@@ -802,7 +758,7 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
         <span id="dmFixNow"></span>
         <button class="btn" id="dmFix" type="button">📌 이 날로 정하기</button>
       </div>
-    </details>
+    </div>
   </div>
 </div>
 
@@ -957,7 +913,7 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-28a";
+const BUILD = "2026-09-28b";
 
 /* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
    · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
@@ -1940,7 +1896,7 @@ function renderCalView(){
     b.querySelector(".mk").textContent = m.mk;
     b.querySelector(".tx").textContent = m.tx;
     b.title = fmtFull(d) + " · " + winLabel(d);
-    b.onclick = () => { if (!me){ askName(); return; } openDay(d, null, "edit"); };
+    b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
     g.appendChild(b);
   }
   /* 이 달 밖에 있는 후보 날짜를 알려준다 — 안 그러면 없는 줄 안다 */
@@ -2023,7 +1979,7 @@ function drawSheet(){
     th.querySelector(".tip").textContent = "";
     th.querySelector(".fix").textContent = fixed ? "📌 정해졌음" : "";
     th.title = "눌러서 이 날 시간대 바꾸기 · 후보에서 빼기";
-    th.onclick = () => openDay(d);
+    th.onclick = () => openDay(d, "set");
     hr.appendChild(th);
   });
   const addD = document.createElement("th"); addD.className = "addcol";
@@ -2065,8 +2021,16 @@ function drawSheet(){
       if (mine && !ans) td.className = "todo";      // 아직 안 넣은 내 칸
       b.appendChild(sp);
       if (memo){ const mm = document.createElement("span"); mm.className = "mm"; mm.textContent = memo; b.appendChild(mm); }
-      b.title = n + " · " + fmtFull(d);
-      b.onclick = () => openDay(d, mine ? null : n, mine ? "edit" : "sum");
+      b.title = n + " · " + fmtFull(d) + (memo ? " — " + memo : "");
+      /* 내 칸만 창을 연다. 남의 칸은 표에 다 보이니 창 대신 아래 줄에 메모 전문만 (2026-09-28 Benny) */
+      if (mine) b.onclick = () => openDay(d, "edit");
+      else {
+        b.classList.add("ro");
+        b.onclick = () => {
+          if (!me){ askName(); return; }
+          setStatus(n + " · " + fmtFull(d) + " — " + (memo || mk.tx));
+        };
+      }
       td.appendChild(b); tr.appendChild(td);
     });
     tr.appendChild(document.createElement("td")).className = "addcol";
@@ -2104,20 +2068,49 @@ function openMember(n){
   setStatus(n + (et ? " · 마지막 수정 " + et : " · 아직 입력 안 함"));
 }
 
-/* ═══ 그 날 창 ═══ */
+/* ═══ 그 날 창 — **내 입력만** ═══
+   (2026-09-28 Benny: "클릭하면 O △ X 3개만. O 누르면 창 꺼지면서 완료, △ 는 시간 버튼 + 이유, X 는 이유만.
+    버튼 누르는 횟수를 최소화" / "다른 사람 일정은 어차피 표에서 보이는데 입력창에서도 보여야 할까?")
+   → 다른 사람 목록·요약 보기·취소 버튼을 다 뺐다. 창을 닫으면 알아서 저장된다.
+   날짜 머리를 누르면 같은 창이 '이 날 설정'(시간대·확정·후보에서 빼기)으로 열린다. */
 let dmDate = null;
-let dmWho  = null;          // 눌러서 들어온 사람 (아래 목록에서 강조)
-let dmSnap = null;          // 창을 열었을 때 상태 — [취소] 가 여기로 되돌린다
+let dmMode = "edit";        // "edit" = 내 입력 / "set" = 이 날 설정
+let dmPart = false;         // △ 를 눌러 시간 버튼을 펼친 상태
+let dmSetOpen = false;      // ⚙ 로 설정을 펼쳤나
+/** 내 이 날 답 — "o" 다 돼요 / "t" 일부만 / "x" 안 돼요 / "" 미정 */
+function dmMark(d){
+  if (noneSel.has(d)) return "x";
+  const on = myHours(d);
+  if (!on.length) return "";
+  return on.length >= hoursFor(d).length ? "o" : "t";
+}
+function renderDm(){
+  const d = dmDate; if (!d) return;
+  const setMode = dmMode === "set";
+  $("#dmNoName").hidden = setMode || !!me;
+  $("#dmMine").hidden   = setMode || !me;
+  $("#dmSet").hidden    = !(setMode || dmSetOpen);
+  $("#dmSet").classList.toggle("solo", setMode);
+  $("#dmSum").textContent = setMode ? "이 날의 시간대 · 확정 · 후보에서 빼기" : (me ? me + " 님, 이 날 되세요?" : "");
+  if (setMode || !me) return;
+  const mk = dmMark(d), show = dmPart ? "t" : mk;
+  $("#dmO").setAttribute("aria-pressed", String(show === "o"));
+  $("#dmT").setAttribute("aria-pressed", String(show === "t"));
+  $("#dmX").setAttribute("aria-pressed", String(show === "x"));
+  $("#dmMore").hidden     = !(show === "t" || show === "x");
+  $("#dmHoursBox").hidden = show !== "t";
+  $("#dmInput").placeholder = show === "x" ? "이유 (선택) — 예: 출장이에요" : "이유 (선택) — 예: 21시 넘어야 도착해요";
+  $("#dmClear").hidden = !mk;
+  if (show === "t") renderDmHours();
+}
 function renderDmHours(){
   const box = $("#dmHours"); box.innerHTML = "";
-  if (!me || !dmDate) return;
-  const d = dmDate, hs = hoursFor(d), no = noneSel.has(d);
-  const on = hs.filter(h => sel.has(key(d,h)));
+  const d = dmDate, hs = hoursFor(d);
   hs.forEach((h, i) => {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "tb" + (no ? " x" : "") + (i === hs.length - 1 ? " last" : "");
+    b.type = "button"; b.className = "tb" + (i === hs.length - 1 ? " last" : "");
     b.dataset.h = h; b.dataset.l = hh(h); b.dataset.e = hh(h + 1);
-    b.textContent = no ? "✗" : String(h);          // 24시간제 숫자를 칸 안에 (2026-09-22)
+    b.textContent = String(h);                   // 24시간제 숫자를 칸 안에 (2026-09-22)
     b.setAttribute("aria-label", h + "시");
     b.setAttribute("aria-pressed", String(sel.has(key(d,h))));
     b.onclick = () => {
@@ -2128,96 +2121,39 @@ function renderDmHours(){
     };
     box.appendChild(b);
   });
-  const st = $("#dmState");
-  if (on.length){ st.textContent = runsOf(on) + " 가능"; st.className = "dm-state ok"; }
-  else if (no){ st.textContent = "이 날 안 돼요"; st.className = "dm-state no"; }
-  else        { st.textContent = "미정 — 아직 안 정함"; st.className = "dm-state u"; }
-  $("#dmNo").setAttribute("aria-pressed", String(no));
+  const on = myHours(d);
+  $("#dmState").textContent = on.length ? runsOf(on) + " 가능" : "되는 시간을 눌러주세요";
+  $("#dmState").classList.toggle("ok", on.length > 0);
 }
-function roBar(box, d, hrs){
-  box.innerHTML = "";
-  const hs = hoursFor(d), no = Array.isArray(hrs) && !hrs.length;
-  hs.forEach((h, i) => {
-    const b = document.createElement("div");
-    b.className = "tb" + (no ? " x" : "") + (i === hs.length - 1 ? " last" : "");
-    b.dataset.l = hh(h); b.dataset.e = hh(h + 1);
-    b.textContent = no ? "✗" : String(h);
-    b.setAttribute("aria-pressed", String(!!hrs && hrs.includes(h)));
-    box.appendChild(b);
-  });
-}
-let dmMode = "sum";     // "sum" = 요약 보기 / "edit" = 내 시간 입력
-function openDay(d, who, mode){
-  const fresh = (dmDate !== d) || $("#dayModal").hidden;
+function openDay(d, mode){
   dmDate = d;
-  if (fresh) dmSnap = { on: hoursFor(d).filter(h => sel.has(key(d,h))), no: noneSel.has(d), memo: noteDraft[d] || "" };
-  if (mode !== "keep") dmMode = (mode === "edit") ? "edit" : "sum";
-  dmWho = who || null;                        // 눌러서 들어온 사람 — 아래 목록에서 표시해준다
+  dmMode = (mode === "set") ? "set" : "edit";
+  dmSetOpen = false;
+  dmPart = dmMark(d) === "t";                    // 이미 △ 면 시간 버튼을 펼쳐서 연다
   $("#dmTitle").textContent = fmtFull(d) + " · " + winLabel(d);
   $("#dmInput").value = noteDraft[d] || "";
-
-  const editing = (dmMode === "edit") && !!me;
-  if (me) $("#dmEditWho").textContent = me + " (나)";
-  $("#dmMine").hidden    = !editing;
-  $("#dmSummary").hidden = editing || !me;
-  $("#dmNoName").hidden  = !!me;              // 이름이 없으면 고르러 가는 버튼만
-
-  if (!editing && me){
-    const on = myHours(d), no = noneSel.has(d), ans = myAnswered(d);
-    const st = $("#dmMyState");
-    if (ans && on.length){ st.textContent = runsOf(on) + " 가능"; st.className = "dm-state ok"; }
-    else if (no){ st.textContent = "이 날 안 돼요"; st.className = "dm-state no"; }
-    else { st.textContent = "아직 입력 안 했어요"; st.className = "dm-state u"; }
-    const et = fmtEdit(editedOf()[me]);
-    $("#dmMyWho").textContent = me + " (나)";
-    $("#dmMyEdited").textContent = et ? "마지막 수정 " + et : "";
-    roBar($("#dmMyBar"), d, ans ? (no ? [] : on) : undefined);
-    const memo = noteDraft[d] || "";
-    $("#dmMyMemo").hidden = !memo;
-    $("#dmMyMemo").textContent = memo ? "“" + memo + "”" : "";
-    $("#dmEditBtn").textContent = ans ? "✏ 내 시간 수정하기" : "✏ 내 시간 입력하기";
-  }
-  $("#dmSet").open = false;
   renderDmAdmin(d);
-  renderDmHours();
-
-  const others = members().filter(n => n !== me);
-  const v = null;
-  const H = hoursOf(), N = notesOf();
-  const okN = others.filter(n => ((H[n] || {})[d] || []).length).length;
-  const ansN = others.filter(n => Array.isArray((H[n] || {})[d])).length;
-  $("#dmSum").textContent = others.length
-    ? "다른 사람 " + others.length + "명 중 " + ansN + "명 응답 · 되는 사람 " + okN + "명"
-    : "아직 나뿐이에요.";
-
-  const box = $("#dmOthers"); box.innerHTML = "";
-  others.sort((a, b) => (!!(N[b]||{})[d]) - (!!(N[a]||{})[d])
-                              || ((H[b]||{})[d]||[]).length - ((H[a]||{})[d]||[]).length)
-    .forEach(n => {
-      const hrs = (H[n] || {})[d], memo = (N[n] || {})[d];
-      const row = document.createElement("div"); row.className = "dm-row" + (n === dmWho ? " you" : "");
-      const nm = document.createElement("span"); nm.className = "n"; nm.textContent = n;
-      const w  = document.createElement("span"); w.className = "w";
-      w.textContent = Array.isArray(hrs) ? (hrs.length ? runsOf(hrs) : "이 날 안 됨") : "아직 입력 안 함";
-      row.append(nm, w);
-      if (memo){ const mm = document.createElement("div"); mm.className = "m"; mm.textContent = "“" + memo + "”"; row.appendChild(mm); }
-      box.appendChild(row);
-    });
-
   const fx = isFixedDay(d);
   $("#dmFixNow").textContent = fx ? "📌 " + fmtFixed(meet().fixed) : "";
   $("#dmFix").textContent = fx ? "정한 거 취소" : "📌 이 날로 정하기";
+  renderDm();
   const wasOpen = !$("#dayModal").hidden;
   $("#dayModal").hidden = false;
   if (!wasOpen) pushModalState("dayModal");   // 이미 열려 있는 창을 다시 그릴 땐 칸을 더 밀지 않는다
 }
+/** 이유 칸에 적은 걸 초안에 옮긴다 (저장 버튼 없이 닫아도 남게) */
+function commitNote(){
+  const d = dmDate;
+  if (!d || !me || dmMode !== "edit" || $("#dmMore").hidden) return;
+  const v = $("#dmInput").value.trim();
+  if ((noteDraft[d] || "") !== v){ v ? (noteDraft[d] = v) : delete noteDraft[d]; dirty = true; paintSheet(); }
+}
 function closeDay(fromBack){
+  commitNote();
   $("#dayModal").hidden = true; dmDate = null;
   if (!fromBack) popModalState();
-  /* 표시만 해두고 창을 닫아도 **알아서 저장**한다.
-     전에는 아래에 '저장 안 됨 — 저장을 눌러주세요' 바만 남아서 그게 뭔지 몰랐다
-     (2026-09-22o Benny: "맨 밑에 저장 버튼은 뭐야?")
-     `save()` 는 맨 앞에서 dirty 를 내리므로 dmSave 로 들어와도 두 번 저장하지 않는다. */
+  /* 창을 닫으면 **알아서 저장**한다 (2026-09-22o Benny: "맨 밑에 저장 버튼은 뭐야?")
+     `save()` 는 맨 앞에서 dirty 를 내리므로 두 번 저장하지 않는다. */
   if (dirty && me && !saving) save();
 }
 
@@ -2805,27 +2741,11 @@ $("#whoRename").onclick = () => {
   setTimeout(() => { try { $("#whoInput").select(); } catch(e){} }, 60);
 };
 
-$("#dmClose").onclick   = closeDay;
-/* 취소 = 이 창을 열었을 때 상태로 되돌리고 닫기 (2026-09-22 Benny) */
-$("#dmCancel").onclick = () => {
-  const d = dmDate;
-  if (d && dmSnap){
-    hoursFor(d).forEach(h => sel.delete(key(d,h)));
-    dmSnap.on.forEach(h => sel.add(key(d,h)));
-    if (dmSnap.no) noneSel.add(d); else noneSel.delete(d);
-    if (dmSnap.memo) noteDraft[d] = dmSnap.memo; else delete noteDraft[d];
-    paintSheet();
-  }
-  if (d) openDay(d, dmWho, "sum"); else closeDay();   // 되돌리고 요약으로
-};
+$("#dmClose").onclick   = () => closeDay();
 $("#dmSetBtn").onclick = () => {
-  const dt = $("#dmSet");
-  dt.open = !dt.open;
-  if (dt.open) dt.scrollIntoView({ behavior:"smooth", block:"nearest" });
-};
-$("#dmEditBtn").onclick = () => {
-  if (!me){ askName(); return; }
-  const d = dmDate; if (d) openDay(d, dmWho, "edit");
+  if (dmMode === "set") return;
+  dmSetOpen = !dmSetOpen; renderDm();
+  if (dmSetOpen) $("#dmSet").scrollIntoView({ behavior:"smooth", block:"nearest" });
 };
 /** 이름 없이 입력하려 할 때 — 창을 닫고 '누구세요' 를 펼친다 */
 function askName(){
@@ -2834,33 +2754,34 @@ function askName(){
   setTimeout(() => { if (!$("#whoAddRow").hidden) $("#whoInput").focus(); }, 300);
 }
 $("#dmName").onclick = askName;
-$("#dmInput").addEventListener("keydown", e => { if (e.key === "Enter") $("#dmSave").click(); });
+/* ○ — 한 번 누르면 끝: 시간 전부 + 이유 지우고 저장·닫기 */
+$("#dmO").onclick = () => {
+  const d = dmDate; if (!d) return;
+  hoursFor(d).forEach(h => sel.add(key(d,h))); noneSel.delete(d);
+  delete noteDraft[d]; $("#dmInput").value = "";
+  dmPart = false; renderDm(); paintSheet(); touch();
+  closeDay();
+};
+/* △ — 시간 버튼 + 이유를 펼친다. 버튼을 누르기 전까지 원래 답은 그대로 둔다(닫아도 안 날아가게) */
+$("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; renderDm(); };
+/* ✕ — 바로 '안 돼요' 로 찍고 이유 칸에 커서. 이유 없이 닫아도 저장된다 */
+$("#dmX").onclick = () => {
+  const d = dmDate; if (!d) return;
+  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d);
+  dmPart = false; renderDm(); paintSheet(); touch();
+  setTimeout(() => { try { $("#dmInput").focus(); } catch(e){} }, 60);
+};
 $("#dmClear").onclick = () => {
   const d = dmDate; if (!d) return;
   hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.delete(d);
-  renderDmHours(); paintSheet(); touch();
-};
-$("#dmYes").onclick = () => {
-  const d = dmDate; if (!d) return;
-  hoursFor(d).forEach(h => sel.add(key(d,h))); noneSel.delete(d);
-  renderDmHours(); paintSheet(); touch();
-};
-$("#dmNo").onclick = () => {
-  const d = dmDate; if (!d) return;
-  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d);
-  renderDmHours(); paintSheet(); touch();
-};
-$("#dmSave").onclick = () => {
-  if (!dmDate || !me) return;
-  const v = $("#dmInput").value.trim();
-  if ((noteDraft[dmDate] || "") !== v){ v ? (noteDraft[dmDate] = v) : delete noteDraft[dmDate]; dirty = true; }
-  const d = dmDate;
-  paintSheet(); save();
-  dmSnap = { on: hoursFor(d).filter(h => sel.has(key(d,h))), no: noneSel.has(d), memo: noteDraft[d] || "" };
-  /* 저장하면 바로 닫는다 — 요약으로 남겨두면 ✕ 를 한 번 더 눌러야 했다
-     (2026-09-22k Benny: "저장 눌렀는데 팝업이 여전히 떠있어서 한 번 더 닫는 동작을") */
+  delete noteDraft[d]; $("#dmInput").value = "";
+  dmPart = false; paintSheet(); touch();
   closeDay();
 };
+/* ⚠️ 한글 조합 중 Enter 는 건너뛴다 (마지막 글자가 잘리는 걸 막는다) */
+$("#dmInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#dmSave").click(); } });
+/* 저장 = 닫기. 닫을 때 이유를 옮기고 저장한다 (closeDay) */
+$("#dmSave").onclick = () => closeDay();
 $("#dmFix").onclick = () => {
   const d = dmDate; if (!d) return;
   if (isFixedDay(d)){ setFixed(""); closeDay(); return; }
