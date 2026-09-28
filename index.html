@@ -218,6 +218,9 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 #dmMore .btn.wide{height:52px;font-size:15.5px}
 .dm-hint{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
 .dm-hint.ok{color:var(--accent)}
+.tbar .tb.from{box-shadow:0 0 0 3px rgba(var(--accent-rgb),.35)}
+.dm-multi{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--muted);
+  cursor:pointer;padding:8px 2px 0;display:block;margin-left:auto}
 .dm-clear{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);
   text-decoration:underline;text-underline-offset:3px;cursor:pointer;display:block;margin:14px auto 0;padding:6px 10px}
 table.sheet td button.ro{cursor:default}
@@ -745,8 +748,9 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
       </div>
       <div id="dmMore" hidden>
         <div id="dmHoursBox">
-          <p class="dm-hint" id="dmState">되는 시간을 눌러주세요</p>
+          <p class="dm-hint" id="dmState">시작 시간을 눌러주세요</p>
           <div class="tbar-wrap"><div class="tbar" id="dmHours"></div></div>
+          <button class="dm-multi" id="dmMulti" type="button">＋ 여러 구간 넣기</button>
         </div>
         <input type="text" id="dmInput" maxlength="200" placeholder="이유 (선택)" aria-label="이유 (선택)">
         <button class="btn primary wide" id="dmSave" type="button">저장</button>
@@ -914,7 +918,7 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-28f";
+const BUILD = "2026-09-28g";
 
 /* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
    · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
@@ -2062,6 +2066,10 @@ let dmDate = null;
 let dmMode = "edit";        // "edit" = 내 입력 / "set" = 이 날 설정
 let dmPart = false;         // △ 를 눌러 시간 버튼을 펼친 상태
 let dmSetOpen = false;      // ⚙ 로 설정을 펼쳤나
+/* △ 시간 입력 — 기본은 **시작 한 번, 끝 한 번** (2026-09-28 Benny: "일일이 시간 누르는 게 귀찮아.
+   여러 시간은 다중시간 입력 버튼을 조그맣게"). dmMulti = 한 칸씩 켜고 끄는 예전 방식 */
+let dmMulti = false;
+let dmFrom = null;          // 시작을 눌러 두고 끝을 기다리는 중
 /** 내 이 날 답 — "o" 다 돼요 / "t" 일부만 / "x" 안 돼요 / "" 미정 */
 function dmMark(d){
   if (noneSel.has(d)) return "x";
@@ -2098,23 +2106,40 @@ function renderDmHours(){
     b.textContent = String(h);                   // 24시간제 숫자를 칸 안에 (2026-09-22)
     b.setAttribute("aria-label", h + "시");
     b.setAttribute("aria-pressed", String(sel.has(key(d,h))));
+    if (dmFrom === h) b.classList.add("from");
     b.onclick = () => {
-      const k = key(d,h);
-      sel.has(k) ? sel.delete(k) : sel.add(k);
       noneSel.delete(d);
+      if (dmMulti){                                  // 한 칸씩 켜고 끄기
+        const k = key(d,h);
+        sel.has(k) ? sel.delete(k) : sel.add(k);
+      } else if (dmFrom === null){                   // ① 시작 — 그 칸만 남기고 끝을 기다린다
+        hs.forEach(x => sel.delete(key(d,x)));
+        sel.add(key(d,h));
+        dmFrom = h;
+      } else {                                       // ② 끝 — 사이를 전부 채운다
+        const a = Math.min(dmFrom, h), z = Math.max(dmFrom, h);
+        hs.forEach(x => (x >= a && x <= z) ? sel.add(key(d,x)) : sel.delete(key(d,x)));
+        dmFrom = null;
+      }
       renderDmHours(); paintSheet(); touch();
     };
     box.appendChild(b);
   });
   const on = myHours(d);
-  $("#dmState").textContent = on.length ? runsOf(on) + " 가능" : "되는 시간을 눌러주세요";
-  $("#dmState").classList.toggle("ok", on.length > 0);
+  const st = $("#dmState");
+  if (!dmMulti && dmFrom !== null) st.textContent = dmFrom + "시부터 — 끝 시간을 눌러주세요";
+  else if (on.length)              st.textContent = runsOf(on) + " 가능";
+  else                             st.textContent = dmMulti ? "되는 시간을 하나씩 눌러주세요" : "시작 시간을 눌러주세요";
+  st.classList.toggle("ok", on.length > 0 && !(dmFrom !== null && !dmMulti));
+  $("#dmMulti").textContent = dmMulti ? "↩ 한 구간으로 넣기" : "＋ 여러 구간 넣기";
 }
 function openDay(d, mode){
   dmDate = d;
   dmMode = (mode === "set") ? "set" : "edit";
   dmSetOpen = false;
   dmPart = dmMark(d) === "t";                    // 이미 △ 면 시간 버튼을 펼쳐서 연다
+  dmFrom = null;
+  dmMulti = runsOf(myHours(d)).indexOf(",") >= 0; // 이미 여러 구간이면 그 방식으로 연다
   $("#dmTitle").textContent = fmtFull(d) + " · " + winLabel(d);
   $("#dmInput").value = noteDraft[d] || "";
   renderDmAdmin(d);
@@ -2692,7 +2717,8 @@ $("#dmO").onclick = () => {
   closeDay();
 };
 /* △ — 시간 버튼 + 이유를 펼친다. 버튼을 누르기 전까지 원래 답은 그대로 둔다(닫아도 안 날아가게) */
-$("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; renderDm(); };
+$("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; dmFrom = null; renderDm(); };
+$("#dmMulti").onclick = () => { dmMulti = !dmMulti; dmFrom = null; renderDmHours(); };
 /* ✕ — 바로 '안 돼요' 로 찍고 이유 칸에 커서. 이유 없이 닫아도 저장된다 */
 $("#dmX").onclick = () => {
   const d = dmDate; if (!d) return;
