@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="manifest.webmanifest">
+<!-- manifest 는 넣지 않는다 — 넣으면 크롬이 "설치" 안내를 띄운다 (2026-09-28 Benny: "설치는 왜 뜨는거야?") -->
 <meta name="theme-color" content="#0b835b">
 <!-- 카톡·문자에 링크를 보냈을 때 뜨는 미리보기 -->
 <meta property="og:type" content="website">
@@ -922,7 +922,7 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-28c";
+const BUILD = "2026-09-28d";
 
 /* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
    · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
