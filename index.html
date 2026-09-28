@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>약속 잡자</title>
 <meta name="description" content="친구들이랑 약속 날짜 정하기. 링크만 보내면 각자 되는 시간을 칠합니다.">
+<!-- 아이콘이 없으면 안드로이드 공유창이 하트 같은 기본 그림을 넣는다 (2026-09-28 Benny: "공유 누르면 하트모양이 나와") -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b835b">
+<!-- 카톡·문자에 링크를 보냈을 때 뜨는 미리보기 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="약속 잡자">
+<meta property="og:title" content="약속 잡자">
+<meta property="og:description" content="되는 날을 링크 하나로 모으기 — 로그인 없이 이름만 적고 ○△✕">
+<meta property="og:image" content="https://benny3s.github.io/meet/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <style>
 :root{
   --bg:#f5f7f6; --card:#fff; --line:#e4e9e6; --ink:#16211c; --muted:#6b7a72;
@@ -89,7 +103,9 @@ table.sheet th,table.sheet td{border-right:1px solid var(--line);border-bottom:1
 table.sheet th{background:var(--card);font-weight:700;font-size:11.5px;text-align:center;
   padding:6px 6px;white-space:nowrap}
 table.sheet th .dow{display:block;font-weight:500;color:var(--muted);font-size:10.5px}
-table.sheet th.sun .dow{color:var(--warn)}
+table.sheet th .dl{display:block;white-space:nowrap}
+table.sheet th .dw{font-weight:500;color:var(--muted)}
+table.sheet th.sun .dw{color:var(--warn)}
 table.sheet th .dow.win{color:var(--accent)}
 table.sheet th.nm{position:sticky;left:0;z-index:2;text-align:left;min-width:64px;max-width:92px;
   overflow:hidden;text-overflow:ellipsis}
@@ -146,6 +162,9 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
   padding:16px;max-height:88vh;max-height:88dvh;overflow:auto;
   box-shadow:0 12px 40px rgba(0,0,0,.28)}
 .modal#heatModal{z-index:58}
+/* 설정 창 위에서 달력을 열고, 달력 위에서 시각을 고른다 → 겹치는 순서를 못 박아 둔다 */
+.modal#calModal{z-index:62}
+.modal#hourModal{z-index:64}
 /* 내용이 늘어나는 창(결과·달력)은 키를 고정한다 — 안쪽만 스크롤되고 창은 안 움직인다 */
 .modal .sheet.fixh{padding:0;overflow:hidden;display:flex;flex-direction:column;
   height:min(90vh,1000px);height:min(90dvh,1000px);max-height:none}
@@ -166,7 +185,14 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 .dowrow button.sun{color:var(--warn)} .dowrow button.sat{color:#3a6fb0}
 .dowrow button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .sheettools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.sheettools .btn{flex:1 1 auto}
+.sheettools .btn{flex:1 1 0}
+/* 새 약속 — '＋ 더 정하기' 접기 */
+.nmore{margin:14px 0 0;border-top:1px solid var(--line)}
+.nmore>summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px;
+  font-weight:700;color:var(--accent);font-size:14px}
+.nmore>summary::-webkit-details-marker{display:none}
+.nmore>summary span{color:var(--muted);font-weight:500;font-size:12.5px}
+.nmore[open]>summary{color:var(--ink)}
 /* 시간 칸 — 6개씩 줄바꿈, 숫자를 칸 안에 (24시간제). 시간이 많아지면 아래로 늘어난다 */
 .tbar-wrap{padding:2px 0 0;margin:0}
 .tbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;width:auto}
@@ -240,15 +266,14 @@ html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
   box-shadow:0 1px 3px rgba(0,0,0,.07)}
 .calnav{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 9px}
 .calnav b{font-size:15px;letter-spacing:-.02em}
-.calnav .navb{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
-  font:inherit;font-size:17px;line-height:1;width:38px;height:38px;border-radius:9px;cursor:pointer}
-.calnav .navb:disabled{opacity:.25;cursor:default}
 /* 달력 뷰의 칸 — 날짜 + 내 상태 기호 */
 .cal.cv{gap:5px}
 .cal.cv .d{padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:1px;min-height:54px;
   justify-content:center}
 .cal.cv .d.off{border-style:dashed;opacity:.35;cursor:default;background:transparent}
 .cal.cv .d .n{font-size:12.5px;font-weight:700;color:var(--muted)}
+.cal.cv .d .n.mon{color:var(--accent)}
+.cal.cv .cvgap{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;line-height:1;padding:0}
 .cal.cv .d .mk{font-size:17px;font-weight:800;line-height:1.1}
 .cal.cv .d .tx{font-size:9.5px;font-weight:700;opacity:.8;white-space:nowrap}
 .cal.cv .d.cand{background:var(--card);border-color:var(--line)}
@@ -325,9 +350,6 @@ button, .chip, .btn, a.lnk, .cardhead, .menu button { touch-action: manipulation
 .st.ok{color:var(--accent)}
 .st.err{color:var(--warn)}
 
-.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:9px}
-.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;
-  border:1px solid var(--line);vertical-align:-2px;margin-right:5px}
 .best{display:flex;flex-direction:column;gap:9px}
 .best .b{border:1px solid var(--line);border-radius:11px;padding:11px 96px 11px 13px;background:var(--bg)}
 .best .b.top{border-color:var(--accent);background:var(--soft)}
@@ -373,7 +395,6 @@ table.sheet tr.me td.todo button{border:1.5px dashed var(--accent);border-radius
   table.sheet tr.me td.todo button{animation:none;opacity:1}
 }
 .callout.done{background:var(--soft);color:var(--ink)}
-.callout .legend{display:block;margin-top:6px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:-.01em}
 
 /* ○ △ ✕ – 네 가지 상태 — 기호를 크게, 글자는 작게 */
 table.sheet td .hr{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15}
@@ -395,12 +416,6 @@ table.sheet tr.me td .hr.none{color:var(--accent);opacity:1}
 .fld input.bad{border-color:var(--warn)}
 .chip.rm{padding-right:9px}
 .chip.rm .x{margin-left:7px;color:var(--muted);font-weight:700}
-/* 처음 오는 사람을 위한 1-2-3 (2026-09-22 Benny 시안) */
-.steps{display:flex;gap:6px;margin:0 0 12px}
-.steps .step{flex:1 1 0;min-width:0;background:rgba(var(--accent-rgb),.07);border-radius:12px;
-  padding:11px 10px;display:flex;flex-direction:column;gap:3px}
-.steps .step b{font-size:11.5px;font-weight:800;color:var(--accent)}
-.steps .step span{font-size:11.5px;color:var(--muted);line-height:1.35}
 .more{text-align:center;margin:6px 0 4px}
 .more a{display:inline-block;color:var(--accent);font-size:12.5px;font-weight:700;line-height:1.2;
   text-decoration:none;padding:10px 15px;border-radius:999px;
@@ -487,6 +502,8 @@ input.bigq:focus{outline:none;border-color:var(--accent)}
 .pk1.on{color:var(--accent)}
 .pk1.on::after{content:" ·  지금 보는 약속";font-weight:500;font-size:12.5px;color:var(--muted)}
 header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
+/* 약속 목록 — 눈에 띄게 연두 바탕 (2026-09-28 Benny: "약속 선택 버튼이 살짝 눈에 안 띄어") */
+header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45);color:var(--accent);font-weight:800}
 /* 관리 화면 */
 .ad{margin-top:12px}
 .ad .ttl{font-weight:700;font-size:15px;letter-spacing:-.02em}
@@ -543,24 +560,18 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
     </span>
   </button>
   <span class="hact">
-    <button class="iconbtn" id="reloadBtn" type="button" title="새로고침">↻</button>
-    <button class="btn" id="pickBtn" type="button">약속 선택 ▾</button>
+    <!-- ↻ 은 뺐다 — 실시간으로 바뀌니 누를 일이 없다. 끊기면 알아서 다시 붙는다 (2026-09-28 Benny) -->
+    <button class="btn pickbtn" id="pickBtn" type="button">📋 약속 목록 ▾</button>
   </span>
 </header>
 
 <!-- ══════════ 새 약속 만들기 ══════════ -->
 <section id="view-new" hidden>
-  <div class="steps">
-    <div class="step"><b>1 만들기</b><span>이름만 적으면 끝</span></div>
-    <div class="step"><b>2 보내기</b><span>링크 복사 → 단톡방</span></div>
-    <div class="step"><b>3 입력</b><span>각자 되는 시간</span></div>
-  </div>
+  <!-- 새 약속 — 꼭 필요한 것만 보이게 (2026-09-28 Benny: "새로 약속 만들 때 항목이 너무 많은데, 더 심플하게")
+       장소·같이 할 사람·시간대는 '＋ 더 정하기' 안에. 안 열어도 된다(친구·장소는 만든 뒤에도 넣을 수 있다) -->
   <div class="card">
-    <div class="spread">
-      <h2 style="margin:0">새 약속 만들기</h2>
-      <button class="btn ghost sm" id="nShare" type="button">↗ 주소 공유</button>
-    </div>
-    <p class="hint">만들고 나온 링크를 친구들에게 보내면 됩니다. 로그인 없이 이름만 적고 입력해요.</p>
+    <h2 style="margin:0 0 4px">새 약속 만들기</h2>
+    <p class="hint" style="margin:0 0 4px">만들고 나온 링크를 단톡방에 보내면 끝이에요.</p>
     <div class="fld"><span>약속 이름</span>
       <input type="text" id="n_title" maxlength="60" placeholder="예: 10월 저녁 모임">
       <p class="fldmsg" id="n_titleMsg" hidden></p>
@@ -568,30 +579,33 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
     <label class="fld"><span>내 이름</span>
       <input type="text" id="n_who" maxlength="30" placeholder="예: 베니"></label>
 
-    <label class="fld"><span>장소 (선택)</span>
-      <input type="text" id="n_place" maxlength="60" placeholder="예: 합정 / 미정"></label>
-
-    <div class="fld"><span>같이 할 사람 (선택) · 나중에 더 넣을 수 있어요</span>
-      <div class="row nowrap">
-        <input type="text" id="n_mem" maxlength="30" placeholder="이름을 적고 엔터" style="flex:1 1 auto">
-        <button class="btn soft" id="n_memAdd" type="button" style="flex:0 0 auto">＋</button>
-      </div>
-      <div class="chips" id="n_memChips" style="margin-top:9px"></div>
-    </div>
-
-    <div class="fld"><span>후보 날짜 · 지금 골라두면 바로 시작할 수 있어요</span>
+    <div class="fld"><span>후보 날짜</span>
       <button class="btn soft wide" id="n_calBtn" type="button">📅 날짜 고르기</button>
       <div class="chips" id="n_dateChips" style="margin-top:9px"></div>
     </div>
 
-    <div class="fld"><span>시간대 — 이 사이에서 고릅니다</span>
-      <div class="hourrow">
-        <button class="hourbtn" id="n_hs" type="button" data-h="18">18시</button>
-        <span class="hint" style="margin:0">~</span>
-        <button class="hourbtn" id="n_he" type="button" data-h="23">23시</button>
+    <details class="nmore" id="n_more">
+      <summary>＋ 더 정하기 <span>장소 · 같이 할 사람 · 시간대</span></summary>
+      <label class="fld"><span>장소</span>
+        <input type="text" id="n_place" maxlength="60" placeholder="예: 합정 / 미정"></label>
+
+      <div class="fld"><span>같이 할 사람</span>
+        <div class="row nowrap">
+          <input type="text" id="n_mem" maxlength="30" placeholder="이름을 적고 엔터" style="flex:1 1 auto">
+          <button class="btn soft" id="n_memAdd" type="button" style="flex:0 0 auto">＋</button>
+        </div>
+        <div class="chips" id="n_memChips" style="margin-top:9px"></div>
       </div>
-    </div>
-    <button class="btn primary wide" id="n_make" type="button" style="margin-top:4px">만들기 →</button>
+
+      <div class="fld"><span>시간대 — 이 사이에서 고릅니다</span>
+        <div class="hourrow">
+          <button class="hourbtn" id="n_hs" type="button" data-h="18">18시</button>
+          <span class="hint" style="margin:0">~</span>
+          <button class="hourbtn" id="n_he" type="button" data-h="23">23시</button>
+        </div>
+      </div>
+    </details>
+    <button class="btn primary wide" id="n_make" type="button" style="margin-top:12px">만들기 →</button>
   </div>
 
 </section>
@@ -658,22 +672,21 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
         <h2 id="mTitle" class="bigtitle" style="margin:0"></h2>
         <p class="hint" id="mSub" style="margin:3px 0 0"></p>
       </div>
-      <span class="row" style="gap:6px;flex:0 0 auto">
-        <button class="btn ghost sm" id="mShare" type="button" title="공유">↗ 공유</button>
-        <button class="btn ghost sm" id="mEdit" type="button">✎ 수정</button>
-      </span>
+      <!-- 고치는 건 전부 ⚙ 설정 하나로 (2026-09-28 Benny: "공유 버튼이 너무 안 보이고, 수정이 2개라서 헷갈려") -->
+      <button class="btn ghost sm" id="mEdit" type="button" style="flex:0 0 auto">⚙ 설정</button>
     </div>
     <p class="fixedline" id="mFixed" hidden></p>
     <div class="sheettools">
       <button class="btn primary" id="heatOpenBtn" type="button">결과 보기</button>
-      <button class="btn soft" id="calOpenBtn" type="button">날짜 수정</button>
+      <button class="btn soft" id="mShare" type="button">🔗 친구에게 공유</button>
     </div>
   </div>
 
   <!-- 아직 날짜가 없을 때 -->
   <div class="card" id="emptyCard" hidden>
     <h2>날짜를 골라주세요</h2>
-    <p class="hint">위 <b>날짜 고르기</b>에서 후보 날짜를 고르면 표가 나옵니다.</p>
+    <p class="hint">후보 날짜를 고르면 표가 나옵니다.</p>
+    <button class="btn primary wide" id="calOpenBtn" type="button">📅 날짜 고르기</button>
   </div>
 
   <!-- 표 -->
@@ -684,13 +697,8 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
     </div>
     <p class="hint" id="sheetHint" style="margin:0 0 10px"></p>
     <div id="calView" hidden>
-      <div class="calnav">
-        <button class="navb" id="cvPrev" type="button" aria-label="이전 달">‹</button>
-        <b id="cvLabel"></b>
-        <button class="navb" id="cvNext" type="button" aria-label="다음 달">›</button>
-      </div>
+      <div class="calnav"><b id="cvLabel"></b></div>
       <div class="cal cv" id="cvGrid"></div>
-      <p class="hint" id="cvOther" style="margin:10px 0 0" hidden></p>
     </div>
     <div class="grid-wrap" id="tabView"><table class="sheet" id="sheet"></table></div>
   </div>
@@ -870,9 +878,10 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
 <div class="modal" id="setModal" hidden>
   <div class="sheet tall" role="dialog" aria-modal="true">
     <div class="spread">
-      <h2 style="margin:0">약속 수정</h2>
+      <h2 style="margin:0">약속 설정</h2>
       <button class="btn ghost" type="button" data-close>닫기</button>
     </div>
+    <button class="btn soft wide" id="s_dates" type="button" style="margin:10px 0 4px">📅 후보 날짜 · 시간대 고르기</button>
     <label class="fld"><span>약속 이름</span><input type="text" id="s_title" maxlength="60"></label>
     <label class="fld"><span>장소</span><input type="text" id="s_place" maxlength="60"></label>
     <label class="fld"><span>메모</span><input type="text" id="s_memo" maxlength="200" placeholder="예: 저녁 먹고 2차까지"></label>
@@ -913,7 +922,7 @@ header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-28b";
+const BUILD = "2026-09-28c";
 
 /* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
    · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
@@ -1071,7 +1080,7 @@ function watch(id){
     if (!meetOk || !peopleOk) return;
     if (!L.done){ L.done = true; ok(); } else onLive();
   };
-  const onErr = e => { if (live !== L) return; L.error = e; if (!L.done){ L.done = true; bad(e); } else setStatus("실시간 연결 끊김 — ↻ 를 눌러주세요", "err"); };
+  const onErr = e => { if (live !== L) return; L.error = e; if (!L.done){ L.done = true; bad(e); } else { setStatus("연결이 끊겼어요 — 다시 연결하는 중…", "err"); setTimeout(() => { if (live === L && M === L.id) load(true); }, 3000); } };
   L.unsub.push(meetRef(id).onSnapshot({ includeMetadataChanges: true }, s => {
     if (!s.exists && s.metadata.fromCache && L.meetState === "wait") return;   // 캐시에 없음 ≠ 없는 약속
     L.meet = s.exists ? s.data({ serverTimestamps: "estimate" }) : null;
@@ -1635,7 +1644,7 @@ async function load(fresh){
   if (!M){ showNew(); return; }
   setStatus(ST.meet ? "최신 확인 중…" : "불러오는 중…");
   try {
-    /* Firestore 는 열어 둔 약속을 계속 지켜본다(onSnapshot) → ↻ 는 연결이 끊겼을 때만 다시 붙는다 */
+    /* Firestore 는 열어 둔 약속을 계속 지켜본다(onSnapshot) → fresh 는 연결이 끊겼을 때만 다시 붙는다 */
     if (fresh && live.error) unwatch();
     ST = await api({ action:"load", m:M });
     if (ST.gone){ setStatus("없는 약속이에요 — 링크를 확인해주세요", "err"); showNew(); return; }
@@ -1647,7 +1656,7 @@ async function load(fresh){
     loadMine(); renderAll(); snapSave();
     setStatus("최신 상태", "ok");
   } catch(e){
-    setStatus("불러오기 실패 — " + e.message + " (↻ 를 눌러주세요)", "err");
+    setStatus("불러오기 실패 — " + e.message + " (페이지를 새로고침해 주세요)", "err");
   }
 }
 
@@ -1681,6 +1690,7 @@ function showNew(){
 function resetNewForm(){
   if (!$("#n_title")) return;
   $("#n_title").value = "";
+  $("#n_more").open = false;
   $("#n_place").value = "";
   $("#n_mem").value = "";
   if (typeof newMem !== "undefined"){ newMem = []; renderNewMem(); }
@@ -1727,7 +1737,6 @@ function renderAll(){
   $("#saveBtn").hidden = !(has && me && dirty);
   $("#foot").textContent = "약속 잡자 " + BUILD + (lastMs ? " · 서버 " + (lastMs/1000).toFixed(1) + "초" : "");
 
-  $("#calOpenBtn").textContent = has ? "날짜 수정" : "날짜 고르기";
   renderWho();
   drawSheet();
   renderSheetArea();
@@ -1830,18 +1839,20 @@ function pickMe(n){
     (2026-09-22l Benny: "되면 O, 부분적으로 되면 세모, 안되면 X, 미정은 –") */
 function markOf(d, hrs, ans, mine){
   const full = hoursFor(d).length;
+  /* tx = 칸에 쓰는 글자. ○ ✕ – 는 기호만 — 글자는 △ 의 되는 시간과 내 빈칸의 '입력' 뿐
+     (2026-09-28 Benny: "글자가 많으면 뭘 봐야할지 보기 힘들어"). lb = 말로 풀어 쓴 것 (아래 줄 안내용) */
   if (ans && hrs && hrs.length){
     const whole = (hrs.length >= full && full > 0);
-    return whole ? { cls:"all",  mk:"○", tx:"다 돼요" }
-                 : { cls:"part", mk:"△", tx:runsOf(hrs, true) };
+    return whole ? { cls:"all",  mk:"○", tx:"", lb:"다 돼요" }
+                 : { cls:"part", mk:"△", tx:runsOf(hrs, true), lb:runsOf(hrs, true) + "시 가능" };
   }
-  if (ans) return { cls:"no", mk:"✕", tx:"안 돼요" };
-  return { cls:"none", mk:"–", tx: mine ? "입력" : "미정" };
+  if (ans) return { cls:"no", mk:"✕", tx:"", lb:"안 돼요" };
+  return { cls:"none", mk:"–", tx: mine ? "입력" : "", lb:"아직 입력 안 함" };
 }
 
 /* ── 달력 보기 — 내 입력 전용. 가로 스크롤 없이 날짜 감각이 살아난다
       (2026-09-22m Benny: "날짜가 가로로 길어서 보기가 불편한데, 달력 모양으로") ── */
-let sheetView = "tab", cvY = 0, cvM = 0, cvInit = false;
+let sheetView = "tab";
 /* 기본은 **표**. 달력은 원할 때 고른다 (2026-09-22n Benny) */
 function loadView(){ try { sheetView = localStorage.getItem("meet_view") || "tab"; } catch(e){ sheetView = "tab"; } }
 function setView(v){
@@ -1857,67 +1868,51 @@ function renderSheetArea(){
   $("#tabView").hidden = cal;
   if (cal) renderCalView();
 }
-function cvReset(){ cvInit = false; cvY = 0; }
-function cvJump(){                                   // 첫 후보 날짜의 달로
-  const ds = dates();
-  const o = ds.length ? dObj(ds[0]) : new Date();
-  cvY = o.getFullYear(); cvM = o.getMonth();
-}
+/* 달력은 **한 장** — 후보 날짜가 있는 주만 이어 붙인다. 달 넘기기(‹ ›)는 없다
+   (2026-09-28 Benny: "1개 월만 보여서 2개 월로 선택지가 되면 보기 힘들 것 같기도, 심플하면서 좋은 방법")
+   · 달이 바뀌는 첫 칸은 숫자를 '11/1' 처럼 쓴다
+   · 후보가 없는 주는 건너뛰고 '⋯' 한 줄로 표시 */
+function cvReset(){}
 function renderCalView(){
-  const ds = dates();
-  if (!cvInit && ds.length){ cvJump(); cvInit = true; }
-  if (!cvY){ cvJump(); }
-  $("#cvLabel").textContent = cvY + "년 " + (cvM + 1) + "월";
-  const g = $("#cvGrid"); g.innerHTML = "";
+  const ds = dates(), g = $("#cvGrid"); g.innerHTML = "";
+  const months = Array.from(new Set(ds.map(d => +d.slice(5, 7))));
+  $("#cvLabel").textContent = months.length ? months[0] + "월" + (months.length > 1 ? " – " + months[months.length - 1] + "월" : "") : "";
   DOW.forEach((w, i) => {
     const h = document.createElement("div");
     h.className = "dowh" + (i === 0 ? " sun" : "");
     h.textContent = w; g.appendChild(h);
   });
-  const first = new Date(cvY, cvM, 1), days = new Date(cvY, cvM + 1, 0).getDate();
+  if (!ds.length) return;
   const set = new Set(ds), today = todayIso();
-  for (let i = 0; i < first.getDay(); i++){
-    const b = document.createElement("div"); b.className = "d blank"; g.appendChild(b);
-  }
-  for (let n = 1; n <= days; n++){
-    const d = iso(new Date(cvY, cvM, n));
-    const cand = set.has(d);
-    const b = document.createElement("button"); b.type = "button"; b.dataset.d = d;
-    b.innerHTML = '<span class="n"></span><span class="mk"></span><span class="tx"></span>';
-    b.querySelector(".n").textContent = n;
-    if (!cand){
-      b.className = "d off"; b.disabled = true;
-      b.querySelector(".mk").textContent = ""; b.querySelector(".tx").textContent = "";
-      g.appendChild(b); continue;
+  const weekOf = d => { const o = dObj(d); o.setDate(o.getDate() - o.getDay()); return iso(o); };
+  const weeks = Array.from(new Set(ds.map(weekOf))).sort();
+  let prev = null, lastMon = -1;
+  weeks.forEach(ws => {
+    if (prev){
+      const p = dObj(prev); p.setDate(p.getDate() + 7);
+      if (iso(p) !== ws){ const gap = document.createElement("div"); gap.className = "cvgap"; gap.textContent = "⋯"; g.appendChild(gap); }
     }
-    const m = me ? markOf(d, myHours(d), myAnswered(d), true)
-                 : { cls:"none", mk:"–", tx:"미정" };
-    b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "");
-    b.querySelector(".mk").textContent = m.mk;
-    b.querySelector(".tx").textContent = m.tx;
-    b.title = fmtFull(d) + " · " + winLabel(d);
-    b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
-    g.appendChild(b);
-  }
-  /* 이 달 밖에 있는 후보 날짜를 알려준다 — 안 그러면 없는 줄 안다 */
-  const out = ds.filter(d => { const o = dObj(d); return o.getFullYear() !== cvY || o.getMonth() !== cvM; });
-  const ot = $("#cvOther");
-  ot.hidden = !out.length;
-  if (out.length) ot.textContent = "다른 달에 " + out.length + "일 더 있어요 — " +
-      out.slice(0, 5).map(fmtD).join(", ") + (out.length > 5 ? " …" : "") + "  (‹ › 로 이동)";
-
-  /* ⚠️ 후보 날짜가 있는 달 **밖으로는 못 넘어간다** — 빈 달을 계속 넘기면 길을 잃는다
-     (2026-09-22n Benny: "입력 범위 밖의 월은 옆으로 못넘어가게") */
-  const r = cvRange();
-  $("#cvPrev").disabled = !r || mIdx(cvY, cvM) <= r.lo;
-  $("#cvNext").disabled = !r || mIdx(cvY, cvM) >= r.hi;
-}
-function mIdx(y, m){ return y * 12 + m; }
-function cvRange(){
-  const ds = dates(); if (!ds.length) return null;
-  let lo = Infinity, hi = -Infinity;
-  ds.forEach(d => { const o = dObj(d), i = mIdx(o.getFullYear(), o.getMonth()); if (i < lo) lo = i; if (i > hi) hi = i; });
-  return { lo, hi };
+    prev = ws;
+    for (let i = 0; i < 7; i++){
+      const o = dObj(ws); o.setDate(o.getDate() + i);
+      const d = iso(o), cand = set.has(d);
+      const b = document.createElement("button"); b.type = "button"; b.dataset.d = d;
+      b.innerHTML = '<span class="n"></span><span class="mk"></span><span class="tx"></span>';
+      const newMon = o.getMonth() !== lastMon;
+      lastMon = o.getMonth();
+      const nEl = b.querySelector(".n");
+      nEl.textContent = newMon ? (o.getMonth() + 1) + "/" + o.getDate() : String(o.getDate());
+      if (newMon) nEl.classList.add("mon");
+      if (!cand){ b.className = "d off"; b.disabled = true; g.appendChild(b); continue; }
+      const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
+      b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "");
+      b.querySelector(".mk").textContent = m.mk;
+      b.querySelector(".tx").textContent = m.tx;
+      b.title = fmtFull(d) + " · " + winLabel(d);
+      b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
+      g.appendChild(b);
+    }
+  });
 }
 
 /** 표와 달력을 **같이** 다시 그린다.
@@ -1953,9 +1948,7 @@ function drawSheet(){
       b2.textContent = todo.slice(0, 4).map(fmtD).join(", ") + (todo.length > 4 ? " …" : "");
       hint.append(b2, document.createTextNode(")을 눌러 입력해주세요."));
     }
-    const lg = document.createElement("span"); lg.className = "legend";
-    lg.textContent = "○ 다 돼요 · △ 일부만 · ✕ 안 돼요 · – 미정";
-    hint.appendChild(lg);
+    /* 기호 설명 줄은 뺐다 — ○△✕ 는 보면 안다 (2026-09-28 Benny) */
   }
 
   /* ⚠️ 입력 표에는 '제일 많음' 추천을 **넣지 않는다**
@@ -1972,12 +1965,11 @@ function drawSheet(){
     const th = document.createElement("th");
     const fixed = isFixedDay(d);
     th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix" : "");
-    th.innerHTML = '<span></span><span class="dow"></span><span class="dow win"></span><span class="dow tip"></span><span class="dow fix"></span>';
-    th.querySelector("span").textContent = fmtD(d);
-    th.querySelector(".dow").textContent = fmtDow(d);
-    th.querySelector(".win").textContent = winLabel(d);
-    th.querySelector(".tip").textContent = "";
-    th.querySelector(".fix").textContent = fixed ? "📌 정해졌음" : "";
+    /* 두 줄로 — '10/5 월' / '18–22' ('시' 는 뺀다). 정한 날은 날짜 앞에 📌 (2026-09-28 Benny: "세 줄이라 정신없어") */
+    th.innerHTML = '<span class="dl"><span class="dd"></span> <span class="dw"></span></span><span class="dow win"></span>';
+    th.querySelector(".dd").textContent = (fixed ? "📌" : "") + fmtD(d);
+    th.querySelector(".dw").textContent = fmtDow(d);
+    th.querySelector(".win").textContent = winOf(d).join("–");
     th.title = "눌러서 이 날 시간대 바꾸기 · 후보에서 빼기";
     th.onclick = () => openDay(d, "set");
     hr.appendChild(th);
@@ -2028,7 +2020,7 @@ function drawSheet(){
         b.classList.add("ro");
         b.onclick = () => {
           if (!me){ askName(); return; }
-          setStatus(n + " · " + fmtFull(d) + " — " + (memo || mk.tx));
+          setStatus(n + " · " + fmtFull(d) + " — " + mk.lb + (memo ? " · " + memo : ""));
         };
       }
       td.appendChild(b); tr.appendChild(td);
@@ -2203,7 +2195,7 @@ async function save(){
   const hadBefore = Object.keys((ST.hours || {})[me] || {}).length;
   if (!dates().length){
     saving = false;
-    setStatus("날짜를 아직 못 받았어요 — ↻ 를 눌러주세요", "err");
+    setStatus("날짜를 아직 못 받았어요 — 페이지를 새로고침해 주세요", "err");
     return;
   }
   if (!anyVal && hadBefore){
@@ -2450,7 +2442,7 @@ function renderPicks(){
   box.appendChild(wrap);
 }
 function setFixed(v){
-  act({ action:"meet_set", fixed: v }, v ? "📌 " + v + " 로 정했습니다" : "정한 거 취소됨",
+  act({ action:"meet_set", fixed: v }, v ? "📌 " + fmtFixed(v) + " 로 정했습니다" : "정한 거 취소됨",
       () => { if (ST.meet) ST.meet.fixed = v; });
 }
 
@@ -2684,7 +2676,6 @@ function goHome(){
 }
 
 /* ═══ 이벤트 ═══ */
-$("#reloadBtn").onclick = () => load(true);
 window.addEventListener("popstate", () => {
   if (ignorePop > 0){ ignorePop--; return; }
   /* 창이 떠 있으면 뒤로가기는 그 창만 닫는다 (페이지는 그대로) */
@@ -2704,14 +2695,10 @@ $("#titleBtn").onclick  = goHome;
 $("#saveBtn").onclick   = save;
 $("#heatOpenBtn").onclick = () => { heatSel = null; renderResult(); openModal("heatModal"); };
 $("#calOpenBtn").onclick  = () => openModal("calModal");
+$("#s_dates").onclick     = () => openModal("calModal");     // 설정 창 위에 겹쳐 연다
 $("#segCal").onclick = () => setView("cal");
 $("#segTab").onclick = () => setView("tab");
-$("#cvPrev").onclick = () => { const r = cvRange(); if (r && mIdx(cvY, cvM) <= r.lo) return;
-  if (--cvM < 0){ cvM = 11; cvY--; } renderCalView(); };
-$("#cvNext").onclick = () => { const r = cvRange(); if (r && mIdx(cvY, cvM) >= r.hi) return;
-  if (++cvM > 11){ cvM = 0; cvY++; } renderCalView(); };
 $("#mShare").onclick      = shareLink;
-$("#nShare").onclick      = shareLink;
 $("#mEdit").onclick       = () => openModal("setModal");
 
 $("#whoGo").onclick    = () => { if (whoRen) renameMe($("#whoInput").value); else pickMe($("#whoInput").value); };
