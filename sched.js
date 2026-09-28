@@ -748,7 +748,7 @@ function renderCalView(){
       if (newMon) nEl.classList.add("mon");
       if (!cand){ b.className = "d off"; b.disabled = true; g.appendChild(b); continue; }
       const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
-      b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "");
+      b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "") + (d < today ? " past" : "");
       b.querySelector(".mk").textContent = m.mk;
       b.querySelector(".tx").textContent = "";                      // 달력은 기호만 — 글자는 표에서
       b.title = fmtFull(d) + " · " + (m.lb || winLabel(d));
@@ -764,10 +764,18 @@ function renderCalView(){
 function paintSheet(){ drawSheet(); renderSheetArea(); }
 
 /* ── 표: 줄 = 사람, 칸 = 날짜 ── */
+let pastOpen = false;                    // 지난 날짜 펼침 (표)
 function drawSheet(){
   const t = $("#sheet"); t.innerHTML = "";
   const ds = dates(), H = hoursOf(), N = notesOf(), ED = editedOf();
   if (!ds.length) return;
+  /* 지난 날짜는 **한 칸으로 접는다** — 누르면 회색으로 펼쳐진다
+     (2026-09-28 Benny: "이미 지난 건 회색으로 처리하고 접을 수 있게") 다가오는 날이 하나도 없으면 펼쳐 둔다 */
+  const today = todayIso();
+  const past = ds.filter(d => d < today), ahead = ds.filter(d => d >= today);
+  const openPast = pastOpen || !ahead.length;
+  const shown = openPast ? ds : ahead;
+  const pastCol = past.length && ahead.length;          // 접기/펼치기 칸
   /* 안내 = "내가 아직 안 넣은 날" 을 그대로 읽어준다
      (2026-09-22k Benny: "넣은 것과 넣어야할 것이 구분이 잘 안되어서") */
   const hint = $("#sheetHint");
@@ -778,10 +786,10 @@ function drawSheet(){
     const b0 = document.createElement("b"); b0.textContent = "이름";
     hint.append(b0, document.createTextNode("을 고르면 내 줄이 생깁니다."));
   } else {
-    const todo = ds.filter(d => !myAnswered(d));
+    const todo = (ahead.length ? ahead : ds).filter(d => !myAnswered(d));   // 지난 날은 안 채워도 된다
     if (!todo.length){
       hint.classList.add("done");
-      const b1 = document.createElement("b"); b1.textContent = ds.length + "일 전부 입력했어요";
+      const b1 = document.createElement("b"); b1.textContent = (ahead.length || ds.length) + "일 전부 입력했어요";
       hint.append(b1, document.createTextNode(" 👍  칸을 다시 눌러 언제든 고칠 수 있습니다."));
     } else {
       const b1 = document.createElement("b");
@@ -804,10 +812,18 @@ function drawSheet(){
   c0.querySelector("span").textContent = "이름";
   c0.querySelector(".sub").textContent = "최근 수정";
   hr.appendChild(c0);
-  ds.forEach(d => {
+  if (pastCol){
+    const pc = document.createElement("th"); pc.className = "pastcol";
+    const pb = document.createElement("button"); pb.type = "button";
+    pb.innerHTML = openPast ? "◂<br>접기" : "지난<br>" + past.length + "일 ▸";
+    pb.title = openPast ? "지난 날짜 접기" : "지난 날짜 " + past.length + "일 보기";
+    pb.onclick = () => { pastOpen = !pastOpen; paintSheet(); };
+    pc.appendChild(pb); hr.appendChild(pc);
+  }
+  shown.forEach(d => {
     const th = document.createElement("th");
     const fixed = isFixedDay(d);
-    th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix" : "");
+    th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix" : "") + (d < today ? " past" : "");
     /* 두 줄로 — '10/5 월' / '18–22' ('시' 는 뺀다). 정한 날은 날짜 앞에 📌 (2026-09-28 Benny: "세 줄이라 정신없어") */
     th.innerHTML = '<span class="dl"><span class="dd"></span> <span class="dw"></span></span><span class="dow win"></span>';
     th.querySelector(".dd").textContent = (fixed ? "📌" : "") + fmtD(d);
@@ -840,9 +856,11 @@ function drawSheet(){
     nb.title = et ? (n + " · 마지막 수정 " + et) : (n + " · 아직 입력 안 함");
     nb.onclick = () => openMember(n);
     th.appendChild(nb); tr.appendChild(th);
+    if (pastCol) tr.appendChild(document.createElement("td")).className = "pastcol";
 
-    ds.forEach(d => {
+    shown.forEach(d => {
       const td = document.createElement("td");
+      if (d < today) td.classList.add("past");
       const b  = document.createElement("button"); b.type = "button";
       const hrs  = mine ? myHours(d) : (H[n] || {})[d];
       const ans  = mine ? myAnswered(d) : Array.isArray(hrs);
@@ -853,7 +871,7 @@ function drawSheet(){
       sp.innerHTML = '<span class="mk"></span><span class="tx"></span>';
       sp.querySelector(".mk").textContent = mk.mk;
       sp.querySelector(".tx").textContent = mk.tx;
-      if (mine && !ans) td.className = "todo";      // 아직 안 넣은 내 칸
+      if (mine && !ans && d >= today) td.classList.add("todo");      // 아직 안 넣은 내 칸 (지난 날은 재촉하지 않는다)
       b.appendChild(sp);
       if (memo){ const mm = document.createElement("span"); mm.className = "mm"; mm.textContent = memo; b.appendChild(mm); }
       b.title = n + " · " + fmtFull(d) + (memo ? " — " + memo : "");
@@ -876,8 +894,9 @@ function drawSheet(){
   const tf = document.createElement("tfoot"), fr = document.createElement("tr");
   const f0 = document.createElement("th"); f0.className = "nm"; f0.textContent = "최대 인원";
   fr.appendChild(f0);
-  ds.forEach(d => {
-    const td = document.createElement("td"); td.className = "cnt";
+  if (pastCol) fr.appendChild(document.createElement("td")).className = "pastcol";
+  shown.forEach(d => {
+    const td = document.createElement("td"); td.className = "cnt" + (d < today ? " past" : "");
     let best = 0;
     hoursFor(d).forEach(h => { const c = availAt(d,h).length; if (c > best) best = c; });
     td.textContent = best ? best + "명" : "–";

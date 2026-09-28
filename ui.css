@@ -528,3 +528,11 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
 .whobar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .whobar .caret{color:var(--muted);font-size:12px;padding:0 2px}
 .whobar[aria-expanded="true"] .caret{color:var(--accent)}
+
+/* 지난 날짜 — 회색·접기 (2026-09-28 Benny) */
+table.sheet th.past, table.sheet td.past{opacity:.42}
+table.sheet td.past .hr{filter:grayscale(1)}
+table.sheet .pastcol{background:var(--soft);padding:0;min-width:48px;width:48px}
+table.sheet th.pastcol button{appearance:none;border:0;background:transparent;font:inherit;font-size:11px;font-weight:700;
+  color:var(--muted);line-height:1.3;width:100%;min-height:52px;cursor:pointer;padding:4px 2px}
+.cal.cv .d.cand.past{opacity:.42;filter:grayscale(1);animation:none}
