@@ -1,0 +1,530 @@
+/* benny-apps 공용 디자인 — 약속 잡자(/when/) · 밴드매니저(/band-manager/) 가 같이 쓴다 (2026-09-28)
+   색·글꼴·버튼·카드·창·표·○△✕ 입력창까지. 앱마다 다른 건 각 페이지의 <style> 에 조금만. */
+:root{
+  --bg:#f5f7f6; --card:#fff; --line:#e4e9e6; --ink:#16211c; --muted:#6b7a72;
+  --accent:#0b835b; --accent-rgb:11,131,91; --soft:#eef4f1; --on-accent:#fff;
+  --warn:#b4472f; --amber:#8a6d1f; --shadow:0 1px 2px rgba(22,33,28,.045);
+}
+/* 밝은 화면이 기본. 시스템이 다크여도 따라가지 않는다
+   (2026-09-22q Benny: "시스템 설정 따르게 하지 말고, 라이트로 기본")
+   어두운 값은 <html data-theme="dark"> 를 넣을 때만 쓴다 — 아래 한 블록만 남겼다. */
+:root[data-theme="dark"]{
+    --bg:#121614; --card:#1a201d; --line:#2a322d; --ink:#e9efeb; --muted:#93a29a;
+  --accent:#4ec99a; --accent-rgb:78,201,154; --soft:#1f2723; --on-accent:#08241a;
+  --warn:#e08b76; --amber:#d8b75f; --shadow:none;
+}
+:root{color-scheme:light}   /* 브라우저 기본 위젯도 밝게 */
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",
+       "Malgun Gothic",system-ui,sans-serif;
+  padding:0 14px calc(40px + env(safe-area-inset-bottom));   /* 아래 상시 막대가 없어져서 여백을 줄였다 */
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:860px;margin:0 auto}
+
+header{padding:16px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:18px;font-weight:800;letter-spacing:-.035em;line-height:1.2;white-space:nowrap}
+.sub{margin:1px 0 0;color:var(--muted);font-size:12px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titlebtn{appearance:none;border:0;background:transparent;padding:0;text-align:left;
+  color:inherit;font:inherit;cursor:pointer;min-width:0;flex:1 1 auto;
+  display:flex;align-items:center;gap:9px}
+.mark{flex:0 0 auto;width:32px;height:32px;border-radius:10px;background:var(--accent);
+  color:var(--on-accent);display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;letter-spacing:-.04em}
+.titlebtn .tt{min-width:0;flex:1 1 auto}
+/* ⚙ 설정 — 희미하지 않게 (2026-09-28 Benny) */
+.btn.setbtn{background:var(--card);border:1.5px solid var(--line);color:var(--ink);font-weight:700}
+.hact{display:flex;align-items:center;gap:7px;flex:0 1 auto;min-width:0;max-width:55%}
+/* 약속 안에서는 버튼에 **지금 약속 이름** (2026-09-28 Benny: "선택된 건지 긴가민가") — 길면 '…' */
+.btn.pickbtn{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0}
+.btn.pickbtn .pbt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn.pickbtn .pcar{flex:0 0 auto;font-size:11px}
+#subtitle:empty{display:none}
+.iconbtn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);
+  font:inherit;font-size:15px;line-height:1;width:40px;height:40px;border-radius:999px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center}
+.iconbtn:active{color:var(--accent);border-color:var(--accent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+
+section[hidden],[hidden]{display:none !important}   /* .btn 의 inline-flex 가 hidden 을 이기지 않게 */
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.card h2{margin:0 0 4px;font-size:15px;font-weight:800;letter-spacing:-.025em}
+.card .hint{margin:0 0 12px;color:var(--muted);font-size:12.5px}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{appearance:none;font:inherit;font-size:13.5px;padding:7px 15px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--on-accent);font-weight:800}
+.chip.sm{font-size:12.5px;padding:5px 11px}
+
+/* ── 시간 격자 ── */
+.grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--line);border-radius:11px;background:var(--bg);
+  /* 옆으로 넘기다가 안드로이드 '뒤로 가기' 제스처가 걸리는 걸 막는다 (2026-09-22d Benny) */
+  overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+.grid{display:grid;min-width:max-content;user-select:none;-webkit-user-select:none}
+.gc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;min-height:34px;padding:2px 4px;text-align:center;line-height:1.25}
+.gc:last-child{border-right:0}
+.grid .hh{position:sticky;left:0;z-index:2;background:var(--card);color:var(--muted);
+  font-variant-numeric:tabular-nums;cursor:pointer;min-width:46px}
+.grid .dh{background:var(--card);font-weight:700;font-size:11.5px;cursor:pointer;
+  flex-direction:column;min-height:42px}
+.grid .dh .dow{font-weight:500;color:var(--muted);font-size:10.5px}
+.grid .dh.sun .dow{color:var(--warn)}
+.grid .corner{position:sticky;left:0;z-index:3;background:var(--card)}
+/* 날짜 바로 아래 '사유' 줄 */
+.grid .memo{background:var(--card);padding:3px;min-height:36px}
+/* 스프레드시트 표 */
+table.sheet{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:max-content}
+table.sheet th,table.sheet td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:0;vertical-align:top}
+table.sheet th{background:var(--card);font-weight:700;font-size:11.5px;text-align:center;
+  padding:6px 6px;white-space:nowrap}
+table.sheet th .dow{display:block;font-weight:500;color:var(--muted);font-size:10.5px}
+table.sheet th .dl{display:block;white-space:nowrap}
+table.sheet th .dw{font-weight:500;color:var(--muted)}
+table.sheet th.sun .dw{color:var(--warn)}
+table.sheet th .dow.win{color:var(--accent)}
+table.sheet th.nm{position:sticky;left:0;z-index:2;text-align:left;min-width:64px;max-width:92px;
+  overflow:hidden;text-overflow:ellipsis}
+table.sheet th.corner{position:sticky;left:0;z-index:3}
+table.sheet td button{appearance:none;border:0;background:transparent;font:inherit;color:inherit;
+  width:100%;min-width:72px;min-height:44px;padding:5px 6px;text-align:center;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  touch-action:manipulation}
+table.sheet td .hr{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.sheet td .mm{font-size:10.5px;color:var(--muted);max-width:110px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+table.sheet tr.me th.nm{color:var(--accent)}
+table.sheet tr.me td{background:var(--soft)}
+table.sheet tr.me td button{min-height:48px}
+table.sheet tr.me td .mm{color:var(--accent);opacity:.85}
+table.sheet td.on{background:var(--accent)}
+table.sheet th.dhead{cursor:pointer}
+table.sheet th.dhead:active{background:var(--soft)}
+table.sheet .nmbtn{appearance:none;border:0;background:transparent;font:inherit;color:inherit;
+  font-weight:700;padding:0;text-align:left;cursor:pointer;min-height:42px;width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;touch-action:manipulation}
+table.sheet .nmbtn.add{color:var(--accent);font-weight:600}
+/* 그 날 창의 '📌 정한 시간' 줄 */
+.dm-hap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+.best .b{position:relative}
+.best .bgo{position:absolute;right:10px;top:50%;transform:translateY(-50%);appearance:none;border:1px solid var(--line);
+  background:var(--card);border-radius:9px;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);
+  padding:7px 10px;min-height:36px;cursor:pointer}
+/* 이름 밑 '최근 수정' — 그 사람이 캘린더를 마지막으로 저장한 때 (2026-09-21 Benny) */
+table.sheet .nmbtn .sub,table.sheet th.corner .sub{display:block;font-weight:500;font-size:10px;
+  color:var(--muted);letter-spacing:-.2px;font-variant-numeric:tabular-nums;margin-top:1px}
+table.sheet tr.me .nmbtn .sub{color:var(--accent);opacity:.8}
+table.sheet th.nm{padding:4px 8px}
+table.sheet .addcol{border-right:0;background:transparent;min-width:0}
+table.sheet th.addcol{padding:4px}
+table.sheet th.addcol button{appearance:none;border:1px dashed var(--line);background:transparent;
+  color:var(--accent);font:inherit;font-size:11.5px;font-weight:700;border-radius:8px;
+  padding:6px 8px;min-height:42px;white-space:nowrap;cursor:pointer}
+table.sheet tfoot th{background:var(--soft);font-size:11px;color:var(--muted)}
+.dm-admin{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;margin:0 0 12px;
+  background:var(--soft);border-radius:10px}
+.dm-admin select{appearance:none;font:inherit;font-size:14px;padding:8px 6px;border:1px solid var(--line);
+  border-radius:9px;background:var(--card);color:var(--ink);min-height:42px;width:58px;text-align:center}
+.dm-admin .u{color:var(--muted);font-size:12px}
+table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
+
+
+/* 창은 화면 가운데에 뜬다 (2026-09-22i Benny: "하단고정 말고 그냥 띄우면 안돼?")
+   바닥에 붙여 두면 내용이 늘 때마다 창이 위로 밀려서 보던 자리가 사라진다. */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.42);
+  display:flex;align-items:center;justify-content:center;padding:12px}
+.modal[hidden]{display:none}
+.modal .sheet{background:var(--card);width:100%;max-width:560px;border-radius:18px;
+  padding:16px;max-height:88vh;max-height:88dvh;overflow:auto;
+  box-shadow:0 12px 40px rgba(0,0,0,.28)}
+.modal#heatModal{z-index:58}
+/* 설정 창 위에서 달력을 열고, 달력 위에서 시각을 고른다 → 겹치는 순서를 못 박아 둔다 */
+.modal#calModal{z-index:62}
+.modal#hourModal{z-index:64}
+/* 내용이 늘어나는 창(결과·달력)은 키를 고정한다 — 안쪽만 스크롤되고 창은 안 움직인다 */
+.modal .sheet.fixh{padding:0;overflow:hidden;display:flex;flex-direction:column;
+  height:min(90vh,1000px);height:min(90dvh,1000px);max-height:none}
+.modal .sheet.fixh .shead{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:space-between;
+  gap:10px;padding:15px 16px 12px;border-bottom:1px solid var(--line)}
+.modal .sheet.fixh .shead h2{font-size:17px;font-weight:800;letter-spacing:-.03em}
+.modal .sheet.fixh .shead .hint{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal .sheet.fixh .sbody{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px 16px 16px}
+.modal .sheet.fixh .sfoot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);
+  background:var(--bg)}
+.modal .sheet.tall{max-height:88vh;max-height:88dvh}
+.subh{font-size:14.5px;font-weight:700;margin:14px 0 2px;letter-spacing:-.02em}
+.dowrow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px}
+.dowrow button{appearance:none;font:inherit;font-weight:700;font-size:14px;min-height:44px;border-radius:10px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);touch-action:manipulation}
+.dowrow button.sun{color:var(--warn)} .dowrow button.sat{color:#3a6fb0}
+.dowrow button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sheettools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.sheettools .btn{flex:1 1 0}
+/* 새 약속 — '＋ 더 정하기' 접기 */
+.nmore{margin:14px 0 0;border-top:1px solid var(--line)}
+.nmore>summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px;
+  font-weight:700;color:var(--accent);font-size:14px}
+.nmore>summary::-webkit-details-marker{display:none}
+.nmore>summary span{color:var(--muted);font-weight:500;font-size:12.5px}
+.nmore[open]>summary{color:var(--ink)}
+/* 시간 칸 — 6개씩 줄바꿈, 숫자를 칸 안에 (24시간제). 시간이 많아지면 아래로 늘어난다 */
+.tbar-wrap{padding:2px 0 0;margin:0}
+.tbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;width:auto}
+.tbar .tb{position:relative;appearance:none;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);width:auto;height:54px;border-radius:11px;background:var(--soft);
+  cursor:pointer;touch-action:manipulation;font:inherit;font-size:17px;font-weight:800;color:var(--muted);padding:0}
+.tbar .tb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tbar .tb.x{background:rgba(180,71,47,.10);border-color:rgba(180,71,47,.22);color:var(--warn);font-size:18px}
+.tbar .tb::before,.tbar .tb.last::after{content:none}
+/* 그 날 창 — ○ △ ✕ 세 개만 (2026-09-28 Benny: "버튼 누르는 횟수를 최소화") */
+.oxpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 0}
+.ox{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  height:84px;border-radius:16px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;
+  font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);touch-action:manipulation;padding:0}
+.ox .mk{font-size:30px;line-height:1;font-weight:700}
+.ox.o .mk{color:var(--accent)} .ox.t .mk{color:var(--amber)} .ox.x .mk{color:var(--warn)}
+.ox:active{transform:scale(.97)}
+.ox.o[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.ox.o[aria-pressed="true"] .mk{color:var(--on-accent)}
+.ox.t[aria-pressed="true"]{background:rgba(138,109,31,.12);border-color:var(--amber)}
+.ox.x[aria-pressed="true"]{background:rgba(180,71,47,.10);border-color:var(--warn)}
+#dmMore{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+#dmMore .btn.wide{height:52px;font-size:15.5px}
+.dm-hint{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
+.dm-hint.ok{color:var(--accent)}
+.tbar .tb.from{box-shadow:0 0 0 3px rgba(var(--accent-rgb),.35)}
+.dm-multi{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--muted);
+  cursor:pointer;padding:8px 2px 0;display:block;margin-left:auto}
+.dm-clear{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;color:var(--muted);
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;display:block;margin:14px auto 0;padding:6px 10px}
+table.sheet td button.ro{cursor:default}
+/* 창이 떠 있을 때 뒤 화면이 같이 스크롤되지 않게 (2026-09-20 Benny) */
+.modal .sheet{overscroll-behavior:contain}
+.modal{overscroll-behavior:contain;touch-action:none}
+.modal .sheet{touch-action:pan-x pan-y}
+html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
+.whob{appearance:none;border:0;background:var(--soft);border-radius:8px;padding:6px 10px;font:inherit;font-size:13.5px;
+  font-weight:600;color:var(--ink);cursor:pointer;min-height:34px}
+.dm-set{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.dm-set.solo{margin-top:0;border-top:0;padding-top:0}
+.dm-sum{color:var(--muted);font-size:13px;margin:2px 0 12px}
+.slot.off,.hcell.off{background:repeating-linear-gradient(135deg,var(--bg) 0 4px,var(--soft) 4px 8px);
+  cursor:default;opacity:.55}
+.grid .dh .win{font-weight:500;color:var(--accent);font-size:10.5px}
+.hcell{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--card)}
+.hcell.z{color:var(--muted);opacity:.45;font-weight:500}
+.hcell.full{background:var(--accent);color:var(--on-accent)}
+.hcell.pick{outline:2px solid var(--ink);outline-offset:-2px}
+
+/* ── 달력 ── */
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 10px}
+.calhead .ym{font-weight:700;font-size:15.5px;letter-spacing:-.02em}
+.calhead .nav{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+  font:inherit;font-size:17px;line-height:1;width:42px;height:42px;border-radius:9px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.cal .dowh{text-align:center;font-size:11.5px;color:var(--muted);padding:2px 0 4px}
+.cal .dowh.sun{color:var(--warn)}
+.cal .d{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+  font:inherit;font-size:13.5px;border-radius:9px;padding:10px 0;cursor:pointer;
+  font-variant-numeric:tabular-nums;text-align:center;touch-action:manipulation}
+.cal .d.blank{border:0;background:transparent;cursor:default}
+.cal .d.past{color:var(--muted);opacity:.3;cursor:default}
+.cal .d.today{border-color:var(--ink);border-width:2px}
+.cal .d.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+/* 달력 ↔ 표 전환 (2026-09-22m Benny: "둘 다 두고 전환 / 내 입력은 달력, 비교는 표") */
+.seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:12px;
+  background:var(--bg);margin:0 0 11px}
+.seg .segb{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;
+  font-size:13px;font-weight:700;letter-spacing:-.02em;padding:8px 14px;border-radius:9px;
+  cursor:pointer;min-height:38px}
+.seg .segb[aria-selected="true"]{background:var(--card);color:var(--accent);
+  box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.calnav{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 9px}
+.calnav b{font-size:15px;letter-spacing:-.02em}
+/* 달력 뷰의 칸 — 날짜 + 내 상태 기호 */
+.cal.cv{gap:5px}
+.cal.cv .d{padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:1px;min-height:54px;
+  justify-content:center}
+.cal.cv .d.off{border-style:dashed;opacity:.35;cursor:default;background:transparent}
+.cal.cv .d .n{font-size:12.5px;font-weight:700;color:var(--muted)}
+.cal.cv .d .n.mon{color:var(--accent)}
+.cal.cv .cvgap{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;line-height:1;padding:0}
+.cal.cv .d .mk{font-size:17px;font-weight:800;line-height:1.1}
+.cal.cv .d .tx{font-size:9.5px;font-weight:700;opacity:.8;white-space:nowrap}
+.cal.cv .d.cand{background:var(--card);border-color:var(--line)}
+.cal.cv .d.cand .n{color:var(--ink)}
+.cal.cv .d.s-all{border-color:var(--accent)}
+.cal.cv .d.s-all .mk,.cal.cv .d.s-all .tx{color:var(--accent)}
+.cal.cv .d.s-part .mk{color:var(--accent)}
+.cal.cv .d.s-no{border-color:var(--warn)}
+.cal.cv .d.s-no .mk,.cal.cv .d.s-no .tx{color:var(--warn)}
+.cal.cv .d.s-none{border:1.5px dashed var(--accent);background:rgba(var(--accent-rgb),.06)}
+.cal.cv .d.s-none .mk,.cal.cv .d.s-none .tx{color:var(--accent)}
+.cal.cv .d.s-none{animation:breathe 2.6s ease-in-out infinite}
+.cal.cv .d.fixday{box-shadow:inset 0 0 0 2px var(--ink)}
+@media (prefers-reduced-motion:reduce){ .cal.cv .d.s-none{animation:none;opacity:1} }
+
+/* 앱 안 브라우저 안내 막대 */
+.iab{display:flex;flex-direction:column;gap:11px;margin:0 0 14px;padding:16px 16px 14px;border-radius:16px;
+  border:2px solid var(--accent);background:var(--accent);color:var(--on-accent);
+  box-shadow:0 6px 18px rgba(var(--accent-rgb),.28)}
+.iab .iabtx{display:flex;flex-direction:column;gap:4px;min-width:0}
+.iab .iabtx b{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--on-accent)}
+.iab .iabtx span{font-size:13px;color:var(--on-accent);opacity:.85;line-height:1.5}
+.iab .iabgo{display:flex;flex-direction:column;gap:7px}
+.iab .iabgo .btn{width:100%;min-height:48px;font-size:15px;font-weight:800}
+.iab .iabgo .btn.primary{background:var(--card);color:var(--accent);border-color:var(--card)}
+.iab .iabgo .btn.ghost{color:var(--on-accent);opacity:.8;min-height:34px;font-size:12.5px;font-weight:600}
+
+.datechip{display:inline-flex;align-items:center;gap:6px}
+.datechip .x{opacity:.65;font-size:15px;line-height:1}
+
+
+/* ── 메모 ── */
+.notes{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+
+input[type=text],input[type=date],input[type=number],input[type=time],select,textarea{
+  font:inherit;font-size:16px;padding:12px 13px;border-radius:12px;min-height:48px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;min-height:62px;line-height:1.5}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.7}
+label.fld,div.fld{display:block}
+label.fld>span,div.fld>span{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px}
+label.fld,div.fld{margin-bottom:12px}
+
+/* 손가락으로 눌러도 옆·아래가 안 눌리게 — 모든 누를 수 있는 것은 최소 42px 높이.
+   touch-action:manipulation 은 더블탭 확대 대기(300ms)를 없앤다. */
+button, .chip, .btn, a.lnk, .cardhead, .menu button { touch-action: manipulation; }
+.btn, .chip{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+
+.btn{appearance:none;font:inherit;font-size:14px;font-weight:700;padding:9px 15px;white-space:nowrap;
+  border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:800;
+  box-shadow:0 2px 8px rgba(var(--accent-rgb),.25)}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--card);font-weight:800}
+.btn.soft{background:rgba(var(--accent-rgb),.10);border-color:rgba(var(--accent-rgb),.38);
+  color:var(--accent);font-weight:800}
+.btn.soft:active{background:rgba(var(--accent-rgb),.20)}
+.btn.ghost{border:0;background:transparent;color:var(--muted);padding:10px 12px;font-weight:500;font-size:13.5px}
+.btn.danger{color:var(--warn)}
+.btn.sm{font-size:13px;padding:7px 12px}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.tight{gap:6px}
+.row.nowrap{flex-wrap:nowrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+.statusbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:70;
+  transform:translate(-50%,16px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;
+  width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:10px;
+  background:var(--ink);color:#fff;border-radius:16px;padding:11px 16px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.statusbar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.statusbar.err{background:#fff;color:var(--ink);border:1.5px solid var(--warn)}
+.statusbar .btn{min-height:36px;padding:0 14px;font-size:13px}
+.statusbar .inner{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:10px;
+  justify-content:space-between}
+.st{font-size:13.5px;font-weight:600;color:inherit;min-width:0;line-height:1.4}
+.st.ok{color:inherit}
+.st.err{color:var(--warn)}
+
+.best{display:flex;flex-direction:column;gap:9px}
+.best .b{border:1px solid var(--line);border-radius:11px;padding:11px 96px 11px 13px;background:var(--bg)}
+.best .b .bt{font-weight:700;font-size:14.5px;letter-spacing:-.02em}
+.best .b .bs{color:var(--muted);font-size:12.5px;margin-top:2px}
+.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 6px}
+footer{color:var(--muted);font-size:11.5px;text-align:center;padding:10px 0 4px}
+/* 만든 사람의 다른 프로젝트로 (2026-09-21 Benny) */
+.btn.wide{width:100%;height:54px;font-size:16px}
+/* 시간 고르기 작은 창 */
+.modal .sheet.hpick{max-width:330px}
+.hgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.hgrid button{appearance:none;font:inherit;font-size:15px;font-weight:700;height:46px;
+  border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);cursor:pointer}
+.hgrid button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--on-accent);font-weight:800}
+.hourbtn{appearance:none;font:inherit;font-size:16px;font-weight:700;min-height:48px;padding:0 14px;
+  border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 92px}
+.hourbtn:active{border-color:var(--accent)}
+/* 지금 보는 약속을 크게 (2026-09-22b Benny: "위에는 그대로라 헷갈림") */
+.eyebrow{margin:0 0 2px;font-size:10.5px;font-weight:800;color:var(--accent);letter-spacing:.02em}
+h2.bigtitle{font-size:22px;font-weight:900;letter-spacing:-.045em;line-height:1.2;overflow-wrap:anywhere}
+/* 누구세요는 늘 연두색으로 눈에 띄게 (2026-09-22b Benny) */
+#whoCard{background:rgba(var(--accent-rgb),.08);border-color:rgba(var(--accent-rgb),.3)}
+#whoCard.need{border-width:2px;border-color:rgba(var(--accent-rgb),.55)}
+/* ⚠️ id 로 감싼 규칙은 .chip[aria-pressed] 를 이긴다 — 고른 칩까지 흰 배경이 되어
+   초록 위 초록 글씨 사고가 또 났다 (2026-09-21 21b 와 같은 함정). 눌리지 않은 칩만 칠한다. */
+#whoCard .chip[aria-pressed="false"]{background:var(--card)}
+#whoCard .chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+/* 표에서 어디를 눌러야 하는지 (2026-09-22b Benny: "뭘 눌러야할지 잘 안보여") */
+table.sheet tr.me td{background:rgba(var(--accent-rgb),.10)}
+table.sheet tr.me td button{border:1px dashed transparent;border-radius:9px}
+table.sheet tr.me td button:active{background:rgba(var(--accent-rgb),.18)}
+/* 아직 안 넣은 내 칸 = 연두 점선 + 아주 느린 숨쉬기. 넣은 칸은 조용히 둔다
+   (2026-09-22k Benny: "넣은 것과 넣어야할 것이 구분이 잘 안되어서"
+    2026-09-22l Benny: "너무 튀지 않게 깜빡깜빡") */
+table.sheet tr.me td.todo{background:rgba(var(--accent-rgb),.05)}
+table.sheet tr.me td.todo button{border:1.5px dashed var(--accent);border-radius:9px;
+  animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  table.sheet tr.me td.todo button{animation:none;opacity:1}
+}
+.callout.done{background:var(--soft);color:var(--ink)}
+
+/* ○ △ ✕ – 네 가지 상태 — 기호를 크게, 글자는 작게 */
+table.sheet td .hr{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15}
+table.sheet td .hr .mk{font-size:17px;font-weight:800;letter-spacing:0}
+table.sheet td .hr .tx{font-size:11px;font-weight:600;opacity:.85;white-space:nowrap}
+table.sheet td .hr.all{color:var(--accent)}
+table.sheet td .hr.part{color:var(--ink)}
+table.sheet td .hr.part .mk{color:var(--accent)}
+table.sheet td .hr.no{color:var(--warn)}
+table.sheet td .hr.none{color:var(--muted);opacity:.75}
+table.sheet tr.me td .hr.none{color:var(--accent);opacity:1}
+.callout{display:block;margin:0 0 11px;padding:10px 12px;border-radius:12px;
+  background:rgba(var(--accent-rgb),.09);color:var(--ink);font-size:12.5px;line-height:1.5}
+.callout b{color:var(--accent)}
+/* 칸 바로 아래에 알려주기 (2026-09-22f Benny: "실패 표시가 맨 아래라 안 보인다") */
+.fldmsg{margin:6px 0 0;font-size:12.5px;font-weight:700;line-height:1.4}
+.fldmsg.bad{color:var(--warn)}
+.fldmsg.good{color:var(--accent)}
+.fld input.bad{border-color:var(--warn)}
+.chip.rm{padding-right:9px}
+.chip.rm .x{margin-left:7px;color:var(--muted);font-weight:700}
+.more{text-align:center;margin:6px 0 4px}
+.more a{display:inline-block;color:var(--accent);font-size:12.5px;font-weight:700;line-height:1.2;
+  text-decoration:none;padding:10px 15px;border-radius:999px;
+  border:1px solid rgba(var(--accent-rgb),.38);background:rgba(var(--accent-rgb),.10);
+  transition:background .12s ease,border-color .12s ease}
+.more a:hover{border-color:var(--accent)}
+.more a:active{background:rgba(var(--accent-rgb),.22)}
+
+#whoCard{padding:10px 14px}
+#whoCard:has(#whoPick:not([hidden])){padding:14px 16px}
+.whobar{display:flex;align-items:center;gap:8px}
+.arch{border-top:1px solid var(--line);padding-top:11px;margin-top:11px}
+.arch:first-child{border-top:0;padding-top:0;margin-top:0}
+.arch .ad{font-weight:700;font-size:14px}
+.arch .aw{color:var(--muted);font-size:12.5px;margin-top:3px;white-space:pre-wrap;line-height:1.55}
+
+
+/* ═══ 약속 잡자 전용 ═══ */
+[hidden]{display:none !important}
+.wholine{display:flex;align-items:center;gap:8px;min-width:0;font-size:14.5px}
+.wholine .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);flex:0 0 auto}
+.fixedline{margin:10px 0 0;color:var(--accent);font-weight:700;font-size:14px}
+/* 이름 밑 '최근 수정' */
+table.sheet .nmbtn .sub,table.sheet th.corner .sub{display:block;font-weight:500;font-size:10px;
+  color:var(--muted);letter-spacing:-.2px;font-variant-numeric:tabular-nums;margin-top:1px}
+table.sheet tr.me .nmbtn .sub{color:var(--accent);opacity:.8}
+/* 정해진 날 */
+table.sheet th .dow.fix{color:var(--accent);font-weight:700;font-size:10px}
+table.sheet th.dhead.hasFix{background:rgba(var(--accent-rgb),.07)}
+table.sheet tfoot td.cnt{text-align:center;font-size:11.5px;color:var(--muted);padding:6px 4px;
+  font-variant-numeric:tabular-nums;background:var(--card)}
+table.sheet tfoot td.cnt.all{color:var(--accent);font-weight:700}
+table.sheet tfoot th.nm{font-size:11px;color:var(--muted);font-weight:600}
+/* 결과 */
+.best .b{position:relative;padding-right:92px}
+.best .bgo{position:absolute;right:10px;top:50%;transform:translateY(-50%);appearance:none;
+  border:1px solid var(--line);background:var(--card);border-radius:9px;font:inherit;font-size:12.5px;
+  font-weight:600;color:var(--accent);padding:7px 10px;min-height:36px;cursor:pointer}
+.best .bgo.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+/* 담은 후보 (2026-09-22 Benny: 선택이 곧 찜) */
+.hcell.inpick,.hcell.full.inpick{background:var(--ink);color:#fff;opacity:1}
+.hcell{cursor:pointer}
+/* 날짜 칸 = 하루 전체 담기/빼기. 담겼으면 진하게 */
+.grid .dh.on{background:var(--ink);color:var(--card)}
+.grid .dh.on .dow{color:var(--card);opacity:.8}
+.picks .pempty{margin:0;font-size:13px;color:var(--muted);text-align:center;padding:6px 0}
+.prow.fixed{border-color:var(--accent);background:rgba(var(--accent-rgb),.07)}
+.picks{margin-top:18px;border:1px solid rgba(var(--accent-rgb),.28);
+  background:rgba(var(--accent-rgb),.06);border-radius:16px;padding:14px}
+.picks .ph{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.picks .ph b{font-size:13.5px;font-weight:800}
+.picks .ph span{flex:1 1 auto;text-align:right;font-size:11.5px;color:var(--muted)}
+.prow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:9px 11px;margin-top:8px}
+.prow .pt{flex:1 1 auto;min-width:0}
+.prow .pt b{display:block;font-size:13.5px;font-weight:800;letter-spacing:-.03em}
+.prow .btn{flex:0 0 auto}
+.prow .pt .ps{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.prow .btn{min-height:38px;padding:0 11px;font-size:12.5px}
+.prow .btn.x{width:38px;padding:0;color:var(--muted)}
+/* 그 날 창 — 이 날로 정하기 */
+.dm-hap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+.dm-hap #dmFixNow{color:var(--accent);font-weight:600;font-size:13.5px}
+/* 참여자 목록 */
+.list .li{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.list .li:last-child{border-bottom:0}
+.list .li .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .li .open{appearance:none;border:0;background:transparent;font:inherit;color:inherit;text-align:left;
+  cursor:pointer;flex:1 1 auto;min-width:0;padding:4px 0;min-height:42px;font-weight:600;font-size:14px}
+h2 .cnt{color:var(--muted);font-weight:500;font-size:13px;margin-left:4px}
+.chip.add{border-style:dashed;color:var(--accent);font-weight:600}
+.chip.add[aria-pressed="true"]{background:var(--bg);color:var(--accent);border-color:var(--accent)}
+html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
+/* 약속 선택 — 이름만, 가나다순 */
+input.bigq{width:100%;margin-top:14px;font-size:16px;padding:13px 15px;border-radius:12px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);min-height:52px}
+input.bigq:focus{outline:none;border-color:var(--accent)}
+.pk1{display:block;width:100%;appearance:none;border:0;border-bottom:1px solid var(--line);
+  background:transparent;font:inherit;font-size:15.5px;font-weight:600;color:inherit;text-align:left;
+  cursor:pointer;padding:15px 2px;min-height:54px;letter-spacing:-.02em}
+.pk1:last-child{border-bottom:0}
+.pk1:active{background:var(--soft)}
+.pk1.on{color:var(--accent)}
+.pk1.on::after{content:" ·  지금 보는 약속";font-weight:500;font-size:12.5px;color:var(--muted)}
+header .hact .btn{font-size:13px;padding:8px 11px;min-height:42px}
+/* 약속 목록 — 눈에 띄게 연두 바탕 (2026-09-28 Benny: "약속 선택 버튼이 살짝 눈에 안 띄어") */
+header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45);color:var(--accent);font-weight:800}
+/* 관리 화면 */
+.ad{margin-top:12px}
+.ad .ttl{font-weight:700;font-size:15px;letter-spacing:-.02em}
+.ad .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:6px;
+  background:var(--soft);color:var(--muted);vertical-align:2px}
+.ad .badge.old{background:rgba(180,71,47,.12);color:var(--warn)}
+.ad .badge.fix{background:rgba(var(--accent-rgb),.14);color:var(--accent)}
+.ad dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;font-size:13px}
+.ad dt{color:var(--muted);white-space:nowrap}
+.ad dd{margin:0;overflow-wrap:anywhere}
+.ad .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+.ad.gone{opacity:.6}
+/* 골라서 지우기 (21l) */
+.ad .selrow{display:flex;align-items:flex-start;gap:10px}
+.ad .selrow input{width:21px;height:21px;margin:1px 0 0;flex:0 0 auto;accent-color:var(--accent)}
+.ad.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(var(--accent-rgb),.16)}
+.adbar{position:sticky;top:8px;z-index:5;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-top:12px;padding:9px 10px 9px 14px;border-radius:13px;
+  background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.adbar .row{gap:6px;flex-wrap:nowrap}
+.adbar .btn{min-height:38px;padding:7px 11px;font-size:13px;
+  background:rgba(255,255,255,.18);border-color:transparent;color:inherit}
+.adbar .btn.go{background:#fff;color:var(--warn);border-color:transparent}
+.hourrow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.hourrow select{flex:0 0 96px;min-width:0}
+
+/* 누구세요 한 줄 — 줄 아무 데나 눌러도 펼쳐진다 (2026-09-22k Benny:
+   "'+친구' 버튼만 있고, 그 버튼 이외 영역을 클릭하면 펼치기") */
+.whobar{cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:12px;margin:-4px;padding:4px}
+.whobar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.whobar .caret{color:var(--muted);font-size:12px;padding:0 2px}
+.whobar[aria-expanded="true"] .caret{color:var(--accent)}
