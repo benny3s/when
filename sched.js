@@ -277,6 +277,8 @@ function buildST(){
   return out;
 }
 function pidOf(n){ return buildST().pid[n] || ""; }
+/** 이름 비교용 열쇠 — 앞뒤·연속 공백과 대소문자를 무시 (같은 이름 막기) */
+function titleKeyOf(t){ return String(t || "").replace(/\s+/g, " ").trim().toLowerCase(); }
 function newPerson(name, extra){
   return Object.assign({ name: name, hours: {}, notes: {}, edited: null, added: TS.now() }, extra || {});
 }
@@ -485,7 +487,9 @@ function availAt(d,h){ const H = hoursOf(); return members().filter(n => ((H[n] 
 
 /* ═══ 스냅샷 — 서버를 기다리는 동안 지난 화면을 먼저 ═══ */
 const SNAP_TTL = 12 * 3600 * 1000;
-function snapKey(){ return "meet_snap:" + M; }
+/* ⚠️ 밴드매니저는 밴드마다 시간표 id 가 겹친다(둘 다 t1) → 페이지가 SCHED_NS 로 칸을 나눈다.
+   안 나누면 다른 밴드의 지난 화면이 잠깐 그려지고, 그 명단이 섞여 들어간다 (2026-09-28 시험에서 확인) */
+function snapKey(){ return (typeof SCHED_NS === "function" ? SCHED_NS() : "meet") + "_snap:" + M; }
 function snapSave(){ if (M) try { localStorage.setItem(snapKey(), JSON.stringify({ t: Date.now(), st: ST })); } catch(e){} }
 function snapLoad(){
   if (!M) return false;
@@ -557,7 +561,7 @@ async function load(fresh){
     if (ST.gone){ setStatus("없는 약속이에요 — 링크를 확인해주세요", "err"); showNew(); return; }
     /* 이름은 기억하지 않는다 — 약속을 옮기면 '누구세요' 에서 다시 고른다.
        (이 페이지에서 이미 고른 이름은 그대로 두고, 명단에서 사라졌으면 비운다) */
-    if (!dirty && !saving && me && !members().includes(me)){ me = ""; saveMe(""); }
+    if (!dirty && !saving && me && !members().includes(me) && !keepMe()){ me = ""; saveMe(""); }
     restoreMe();
     /* ⚠️ force 를 주면 안 된다 — 저장 안 된 내 입력을 서버 값이 덮어쓴다 */
     loadMine(); renderAll(); snapSave();
@@ -649,12 +653,15 @@ function lastName(){ try { return localStorage.getItem("meet_lastname") || ""; }
 /* 고른 이름은 **그 약속에 한해** 기억한다 — 새로고침으로 풀리면 매번 다시 고르게 된다
    (2026-09-22o Benny: "새로 고침 할 때마다 명재로 된게 풀리던데 의도한거야?")
    약속마다 키가 다르니 '다른 약속으로 가면 다시 고른다' 는 규칙은 그대로다. */
-function meKey(){ return "meet_me:" + M; }
+/* 밴드매니저는 '내 이름' 을 시간표마다가 아니라 **밴드 단위**로 기억한다 → SCHED_ME_KEY 로 바꿔 끼운다 */
+function meKey(){ return typeof SCHED_ME_KEY === "function" ? SCHED_ME_KEY() : "meet_me:" + M; }
+/* 밴드매니저는 밴드 멤버를 시간표에 나중에 채워 넣는다 → 잠깐 명단에 없어도 내 이름을 지우지 않는다 */
+function keepMe(){ return typeof SCHED_KEEP_ME !== "undefined" && SCHED_KEEP_ME; }
 function saveMe(n){ try { n ? localStorage.setItem(meKey(), n) : localStorage.removeItem(meKey()); } catch(e){} }
 function restoreMe(){
   if (me || !M) return;
   let n = ""; try { n = localStorage.getItem(meKey()) || ""; } catch(e){}
-  if (n && members().includes(n)){ me = n; whoOpen = false; }
+  if (n && (members().includes(n) || keepMe())){ me = n; whoOpen = false; }
 }
 function pickMe(n){
   n = String(n || "").trim();
@@ -1161,6 +1168,8 @@ function fixes(){ return String((meet() && meet().fixed) || "").split(/\s*,\s*/)
 function isFixed(t){ return fixes().indexOf(t) >= 0; }
 function setFixes(list, msg){
   const v = Array.from(new Set(list)).sort().join(", ");
+  /* 밴드매니저: 📌 정한 게 바뀌면 합주 이력에 '예정' 회차를 만들고 지운다 */
+  if (typeof onFixesChanged === "function"){ try { onFixesChanged(fixes(), v ? v.split(", ") : []); } catch(e){} }
   act({ action:"meet_set", fixed: v }, msg, () => { if (ST.meet) ST.meet.fixed = v; });
 }
 function toggleFix(t){
@@ -1321,7 +1330,7 @@ function dateChanged(){
 async function saveDates(){
   const list = Array.from(dsel).sort();
   dateDirty = false;
-  if (!M){ renderNewDates(); return; }       // 아직 안 만든 약속 — 폼에만 담아둔다 (2026-09-22f)
+  if (!M){ if (typeof renderNewDates === "function") renderNewDates(); return; }   // 아직 안 만든 약속 — 폼에만 담아둔다 (2026-09-22f)
   await act({ action:"meet_set", dates: list.join(",") }, "날짜 저장됨", () => { ST.dates = list.slice(); });
 }
 
