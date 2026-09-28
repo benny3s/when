@@ -536,3 +536,12 @@ table.sheet .pastcol{background:var(--soft);padding:0;min-width:48px;width:48px}
 table.sheet th.pastcol button{appearance:none;border:0;background:transparent;font:inherit;font-size:11px;font-weight:700;
   color:var(--muted);line-height:1.3;width:100%;min-height:52px;cursor:pointer;padding:4px 2px}
 .cal.cv .d.cand.past{opacity:.42;filter:grayscale(1);animation:none}
+
+/* 달력 보기 — 달마다 제목 줄, 요일이 몰리면 타일 (2026-09-28 Benny: "길어지고 월 구분이 안 가") */
+.cal.cv .cvmon{grid-column:1/-1;font-size:13.5px;font-weight:800;letter-spacing:-.02em;color:var(--ink);
+  padding:12px 2px 2px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.cal.cv .cvmon:first-of-type{padding-top:2px}
+.cal.cv .cvmon.pasttog{color:var(--muted);font-weight:700;font-size:12.5px;border:0;cursor:pointer;padding:2px 2px 6px}
+.cal.cv.flow{grid-template-columns:repeat(4,minmax(0,1fr))}
+.cal.cv.flow .d .n{font-size:12px}
+.calnav:has(b:empty){display:none}

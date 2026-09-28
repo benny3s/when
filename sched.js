@@ -717,42 +717,68 @@ function renderSheetArea(){
    · 후보가 없는 주는 건너뛰고 '⋯' 한 줄로 표시 */
 function cvReset(){}
 function renderCalView(){
-  const ds = dates(), g = $("#cvGrid"); g.innerHTML = "";
-  const months = Array.from(new Set(ds.map(d => +d.slice(5, 7))));
-  $("#cvLabel").textContent = months.length ? months[0] + "월" + (months.length > 1 ? " – " + months[months.length - 1] + "월" : "") : "";
-  DOW.forEach((w, i) => {
-    const h = document.createElement("div");
-    h.className = "dowh" + (i === 0 ? " sun" : "");
-    h.textContent = w; g.appendChild(h);
-  });
-  if (!ds.length) return;
-  const set = new Set(ds), today = todayIso();
+  /* (2026-09-28 Benny: "달력이 굉장히 길어지고 월 구분이 안 가는데")
+     · 달마다 제목 줄 — "10월". 올해가 아니면 "2027년 1월" (날짜마다는 안 붙인다)
+     · 후보가 **듬성듬성**하면(한 주 7칸 중 절반 미만 — 매주 일요일, 주말만 등) 빈칸을 빼고 후보만 4개씩 타일로
+       → 18주 × 7칸 대신 달마다 한두 줄. 매일처럼 빽빽하면 요일을 맞춘 달력
+     · 지난 날짜는 표처럼 '지난 N일 ▸' 로 접는다 */
+  const all = dates(), g = $("#cvGrid"); g.innerHTML = "";
+  $("#cvLabel").textContent = "";
+  if (!all.length) return;
+  const today = todayIso(), thisYear = new Date().getFullYear();
+  const past = all.filter(d => d < today), ahead = all.filter(d => d >= today);
+  const openPast = pastOpen || !ahead.length;
+  const ds = openPast ? all : ahead;
+  const set = new Set(ds);
+  const monthName = d => { const o = dObj(d); return (o.getFullYear() !== thisYear ? o.getFullYear() + "년 " : "") + (o.getMonth() + 1) + "월"; };
+  const addHead = (txt, cls) => { const x = document.createElement("div"); x.className = "cvmon" + (cls ? " " + cls : ""); x.textContent = txt; g.appendChild(x); return x; };
+  const tile = (d, label) => {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.d = d;
+    b.innerHTML = '<span class="n"></span><span class="mk"></span><span class="tx"></span>';
+    b.querySelector(".n").textContent = label;
+    const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
+    b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "") + (d < today ? " past" : "");
+    b.querySelector(".mk").textContent = m.mk;
+    b.title = fmtFull(d) + " · " + winLabel(d);
+    b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
+    return b;
+  };
+  if (past.length && ahead.length){
+    const t = addHead(openPast ? "◂ 지난 날짜 접기" : "지난 " + past.length + "일 ▸", "pasttog");
+    t.setAttribute("role", "button"); t.tabIndex = 0;
+    t.onclick = () => { pastOpen = !pastOpen; paintSheet(); };
+  }
+  /* 한 주 7칸 중 절반 미만만 후보면(주말만·매주 일요일 등) 빈칸투성이라 타일이 낫다.
+     매일처럼 빽빽할 때만 요일 맞춘 달력 */
   const weekOf = d => { const o = dObj(d); o.setDate(o.getDate() - o.getDay()); return iso(o); };
   const weeks = Array.from(new Set(ds.map(weekOf))).sort();
-  let prev = null, lastMon = -1;
+  const flow = ds.length / (weeks.length * 7) < 0.5;
+  g.classList.toggle("flow", flow);
+  if (flow){
+    /* 타일 — 달마다 제목 + 후보 날짜만 (날짜 옆에 요일) */
+    let mon = "";
+    ds.forEach(d => {
+      const mn = monthName(d);
+      if (mn !== mon){ mon = mn; addHead(mn); }
+      g.appendChild(tile(d, dObj(d).getDate() + " " + fmtDow(d)));
+    });
+    return;
+  }
+  /* 요일 맞춘 달력 — 후보가 있는 주만, 달이 바뀌면 제목 줄 */
+  DOW.forEach((w, i) => {
+    const x = document.createElement("div"); x.className = "dowh" + (i === 0 ? " sun" : ""); x.textContent = w; g.appendChild(x);
+  });
+  let mon = "";
   weeks.forEach(ws => {
-    if (prev){
-      const p = dObj(prev); p.setDate(p.getDate() + 7);
-      if (iso(p) !== ws){ const gap = document.createElement("div"); gap.className = "cvgap"; gap.textContent = "⋯"; g.appendChild(gap); }
-    }
-    prev = ws;
+    const firstCand = ds.find(d => weekOf(d) === ws);
+    const mn = monthName(firstCand);
+    if (mn !== mon){ mon = mn; addHead(mn); }
     for (let i = 0; i < 7; i++){
       const o = dObj(ws); o.setDate(o.getDate() + i);
-      const d = iso(o), cand = set.has(d);
-      const b = document.createElement("button"); b.type = "button"; b.dataset.d = d;
-      b.innerHTML = '<span class="n"></span><span class="mk"></span><span class="tx"></span>';
-      const newMon = o.getMonth() !== lastMon;
-      lastMon = o.getMonth();
-      const nEl = b.querySelector(".n");
-      nEl.textContent = newMon ? (o.getMonth() + 1) + "/" + o.getDate() : String(o.getDate());
-      if (newMon) nEl.classList.add("mon");
-      if (!cand){ b.className = "d off"; b.disabled = true; g.appendChild(b); continue; }
-      const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
-      b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "") + (d < today ? " past" : "");
-      b.querySelector(".mk").textContent = m.mk;
-      b.querySelector(".tx").textContent = "";                      // 달력은 기호만 — 글자는 표에서
-      b.title = fmtFull(d) + " · " + (m.lb || winLabel(d));
-      b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
+      const d = iso(o);
+      if (set.has(d)){ g.appendChild(tile(d, String(o.getDate()))); continue; }
+      const b = document.createElement("div"); b.className = "d off";
+      b.innerHTML = '<span class="n"></span>'; b.querySelector(".n").textContent = o.getDate();
       g.appendChild(b);
     }
   });
