@@ -39,7 +39,7 @@ body{
   margin:0; background:var(--bg); color:var(--ink);
   font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",
        "Malgun Gothic",system-ui,sans-serif;
-  padding:0 14px calc(92px + env(safe-area-inset-bottom));
+  padding:0 14px calc(40px + env(safe-area-inset-bottom));   /* 아래 상시 막대가 없어져서 여백을 줄였다 */
   -webkit-text-size-adjust:100%;
 }
 .wrap{max-width:860px;margin:0 auto}
@@ -55,7 +55,14 @@ h1{margin:0;font-size:18px;font-weight:800;letter-spacing:-.035em;line-height:1.
   color:var(--on-accent);display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:800;letter-spacing:-.04em}
 .titlebtn .tt{min-width:0;flex:1 1 auto}
-.hact{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+/* ⚙ 설정 — 희미하지 않게 (2026-09-28 Benny) */
+.btn.setbtn{background:var(--card);border:1.5px solid var(--line);color:var(--ink);font-weight:700}
+.hact{display:flex;align-items:center;gap:7px;flex:0 1 auto;min-width:0;max-width:55%}
+/* 약속 안에서는 버튼에 **지금 약속 이름** (2026-09-28 Benny: "선택된 건지 긴가민가") — 길면 '…' */
+.btn.pickbtn{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0}
+.btn.pickbtn .pbt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn.pickbtn .pcar{flex:0 0 auto;font-size:11px}
+#subtitle:empty{display:none}
 .iconbtn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);
   font:inherit;font-size:15px;line-height:1;width:40px;height:40px;border-radius:999px;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center}
@@ -343,14 +350,17 @@ button, .chip, .btn, a.lnk, .cardhead, .menu button { touch-action: manipulation
 .row.nowrap{flex-wrap:nowrap}
 .spread{display:flex;justify-content:space-between;align-items:center;gap:10px}
 
-.statusbar{position:fixed;left:0;right:0;bottom:0;z-index:30;
-  background:color-mix(in srgb,var(--card) 92%,transparent);
-  backdrop-filter:blur(10px);border-top:1px solid var(--line);
-  padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+.statusbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:70;
+  transform:translate(-50%,16px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;
+  width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:10px;
+  background:var(--ink);color:#fff;border-radius:16px;padding:11px 16px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.statusbar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.statusbar.err{background:#fff;color:var(--ink);border:1.5px solid var(--warn)}
+.statusbar .btn{min-height:36px;padding:0 14px;font-size:13px}
 .statusbar .inner{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:10px;
   justify-content:space-between}
-.st{font-size:13px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.st.ok{color:var(--accent)}
+.st{font-size:13.5px;font-weight:600;color:inherit;min-width:0;line-height:1.4}
+.st.ok{color:inherit}
 .st.err{color:var(--warn)}
 
 .best{display:flex;flex-direction:column;gap:9px}
@@ -562,7 +572,7 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
   </button>
   <span class="hact">
     <!-- ↻ 은 뺐다 — 실시간으로 바뀌니 누를 일이 없다. 끊기면 알아서 다시 붙는다 (2026-09-28 Benny) -->
-    <button class="btn pickbtn" id="pickBtn" type="button">📋 약속 목록 ▾</button>
+    <button class="btn pickbtn" id="pickBtn" type="button"><span class="pbt" id="pickName">📋 약속 목록</span><span class="pcar">▾</span></button>
   </span>
 </header>
 
@@ -674,7 +684,7 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
         <p class="hint" id="mSub" style="margin:3px 0 0"></p>
       </div>
       <!-- 고치는 건 전부 ⚙ 설정 하나로 (2026-09-28 Benny: "공유 버튼이 너무 안 보이고, 수정이 2개라서 헷갈려") -->
-      <button class="btn ghost sm" id="mEdit" type="button" style="flex:0 0 auto">⚙ 설정</button>
+      <button class="btn sm setbtn" id="mEdit" type="button" style="flex:0 0 auto">⚙ 설정</button>
     </div>
     <p class="fixedline" id="mFixed" hidden></p>
     <div class="sheettools">
@@ -918,7 +928,7 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-28g";
+const BUILD = "2026-09-28h";
 
 /* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
    · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
@@ -968,7 +978,19 @@ function runsOf(list, compact){
   return out.join(", ");
 }
 function cell(cls, text){ const el = document.createElement("div"); el.className = cls; if (text) el.textContent = text; return el; }
-function setStatus(msg, cls){ const el = $("#status"); el.textContent = msg; el.className = "st" + (cls ? " " + cls : ""); }
+/* 아래 알림 — 잠깐 떴다 사라진다. **실패(err)만** 남는다
+   (2026-09-28 Benny: "맨 밑에 저장됨/저장 버튼 뜨는 거 필수야?") → 저장 성공은 표가 바로 바뀌니 알리지 않는다 */
+let stTimer = null;
+function setStatus(msg, cls){
+  const bar = $("#statusbar"), el = $("#status");
+  clearTimeout(stTimer);
+  el.textContent = msg || ""; el.className = "st" + (cls ? " " + cls : "");
+  const failBtn = !$("#saveBtn").hidden;
+  bar.classList.toggle("show", !!msg || failBtn);
+  bar.classList.toggle("err", cls === "err" || failBtn);
+  if (msg && cls !== "err" && !failBtn)
+    stTimer = setTimeout(() => bar.classList.remove("show"), Math.min(5000, 1600 + String(msg).length * 70));
+}
 
 /* ═══ 통신 — Firestore ═══
    화면 코드는 예전 서버와 똑같이 api({action:…}) 를 부르고 ST 모양의 상태를 돌려받는다.
@@ -1371,7 +1393,7 @@ async function loadAdmin(){
   try {
     const r = await api({ action:"meet_all", full:1 });
     adRows = r.meets || [];
-    setStatus("최신 상태", "ok");
+    setStatus("");
   } catch(e){
     adRows = [];
     setStatus("불러오기 실패 — " + e.message, "err");
@@ -1601,7 +1623,7 @@ function loadMine(force){
 function myHours(d){ return hoursFor(d).filter(h => sel.has(key(d,h))); }
 function myAnswered(d){ return myHours(d).length > 0 || noneSel.has(d); }
 /* 입력 중 표시. 버튼은 숨긴다 — 닫으면 저장되고, 실패했을 때만 renderAll 이 버튼을 띄운다 */
-function touch(){ dirty = true; $("#saveBtn").hidden = true; setStatus("입력 중… — 창을 닫으면 저장됩니다"); }
+function touch(){ dirty = true; $("#saveBtn").hidden = true; setStatus(""); }
 
 /* ═══ 쓰기 (낙관적 반영) ═══ */
 const pending = new Map(); let pendSeq = 0;
@@ -1614,9 +1636,8 @@ async function act(params, okMsg, applyLocal){
   if (applyLocal){
     backup = JSON.stringify(ST);
     try { applyLocal(); } catch(err){ backup = null; }
-    if (backup){ pend = pendAdd(applyLocal); absorb(); setStatus((okMsg || "완료") + " · 저장 중…"); }
+    if (backup){ pend = pendAdd(applyLocal); absorb(); }
   }
-  if (!backup) setStatus("처리 중…");
   try {
     ST = await api(Object.assign({ m: M }, params));
     pendDone(pend); pendReplay(); absorb();
@@ -1637,7 +1658,7 @@ function absorb(){
 /* ═══ 로드 ═══ */
 async function load(fresh){
   if (!M){ showNew(); return; }
-  setStatus(ST.meet ? "최신 확인 중…" : "불러오는 중…");
+  if (!ST.meet) setStatus("불러오는 중…");
   try {
     /* Firestore 는 열어 둔 약속을 계속 지켜본다(onSnapshot) → fresh 는 연결이 끊겼을 때만 다시 붙는다 */
     if (fresh && live.error) unwatch();
@@ -1649,7 +1670,7 @@ async function load(fresh){
     restoreMe();
     /* ⚠️ force 를 주면 안 된다 — 저장 안 된 내 입력을 서버 값이 덮어쓴다 */
     loadMine(); renderAll(); snapSave();
-    setStatus("최신 상태", "ok");
+    setStatus("");
   } catch(e){
     setStatus("불러오기 실패 — " + e.message + " (페이지를 새로고침해 주세요)", "err");
   }
@@ -1666,6 +1687,8 @@ function showNew(){
   /* 제목은 늘 "약속 잡자" — 약속마다 바뀌면 헷갈린다 (2026-09-21 Benny) */
   $("#h1").textContent = "약속 잡자";
   $("#subtitle").textContent = ad ? "만들어진 약속 전부" : "친구들 되는 날 한 번에 모으기";
+  $("#pickName").textContent = "📋 약속 목록";
+  $("#pickBtn").title = "약속 목록";
   document.title = "약속 잡자";
   $("#foot").textContent = "약속 잡자 " + BUILD;
   if (ad) loadAdmin();
@@ -1713,7 +1736,9 @@ function renderAll(){
   if (m.place) bits.push(m.place);
   bits.push(members().length + "명");
   if (dates().length) bits.push("후보 " + dates().length + "일");
-  $("#subtitle").textContent = bits.join(" · ");
+  $("#subtitle").textContent = "";                    // 이름은 오른쪽 버튼에 — 겹치니 뺀다
+  $("#pickName").textContent = m.title || "약속";
+  $("#pickBtn").title = (m.title || "약속") + " — 다른 약속 고르기";
   document.title = (m.title || "약속") + " — 약속 잡자";
 
   recentTouch(M, m.title);
@@ -2238,10 +2263,9 @@ async function save(){
   ST.edited[me] = nowStamp();
   dirty = false;
   renderAll();
-  setStatus("저장 중… — " + me);
   try {
     ST = await api({ action:"save", m:M, name:me, payload: JSON.stringify(payload) });
-    setStatus("저장됨 ✓ — " + me, "ok");
+    setStatus("");
     renderAll(); snapSave();
   } catch(e){
     const b = JSON.parse(backup);
@@ -2660,6 +2684,8 @@ window.addEventListener("popstate", () => {
 });
 $("#titleBtn").onclick  = goHome;
 $("#saveBtn").onclick   = save;
+/* 알림을 누르면 닫힌다 (실패 후 다시 저장 버튼이 떠 있을 땐 그대로) */
+$("#statusbar").addEventListener("click", e => { if (!e.target.closest("button") && $("#saveBtn").hidden) $("#statusbar").classList.remove("show"); });
 $("#heatOpenBtn").onclick = () => { renderResult(); openModal("heatModal"); };
 $("#calOpenBtn").onclick  = () => openModal("calModal");
 $("#s_dates").onclick     = () => openModal("calModal");     // 설정 창 위에 겹쳐 연다
@@ -2719,12 +2745,12 @@ $("#dmO").onclick = () => {
 /* △ — 시간 버튼 + 이유를 펼친다. 버튼을 누르기 전까지 원래 답은 그대로 둔다(닫아도 안 날아가게) */
 $("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; dmFrom = null; renderDm(); };
 $("#dmMulti").onclick = () => { dmMulti = !dmMulti; dmFrom = null; renderDmHours(); };
-/* ✕ — 바로 '안 돼요' 로 찍고 이유 칸에 커서. 이유 없이 닫아도 저장된다 */
+/* ✕ — 바로 '안 돼요' 로 찍는다. 이유 없이 닫아도 저장된다 */
 $("#dmX").onclick = () => {
   const d = dmDate; if (!d) return;
   hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d);
   dmPart = false; renderDm(); paintSheet(); touch();
-  setTimeout(() => { try { $("#dmInput").focus(); } catch(e){} }, 60);
+  /* 키보드는 띄우지 않는다 — 이유는 적고 싶을 때만 칸을 누른다 (2026-09-28 Benny: "자동 키보드 불편해") */
 };
 $("#dmClear").onclick = () => {
   const d = dmDate; if (!d) return;
@@ -3124,7 +3150,7 @@ loadView();
 if (M && snapLoad()){
   restoreMe();
   loadMine(true); renderAll();
-  setStatus("최신 확인 중…");
+
 } else {
   M ? setStatus("불러오는 중…") : showNew();
 }
