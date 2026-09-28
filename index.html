@@ -236,7 +236,7 @@ html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
 .grid .dh .win{font-weight:500;color:var(--accent);font-size:10.5px}
 .hcell{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--card)}
 .hcell.z{color:var(--muted);opacity:.45;font-weight:500}
-.hcell.full{outline:2px solid var(--accent);outline-offset:-2px}
+.hcell.full{background:var(--accent);color:var(--on-accent)}
 .hcell.pick{outline:2px solid var(--ink);outline-offset:-2px}
 
 /* ── 달력 ── */
@@ -455,7 +455,7 @@ table.sheet tfoot th.nm{font-size:11px;color:var(--muted);font-weight:600}
   font-weight:600;color:var(--accent);padding:7px 10px;min-height:36px;cursor:pointer}
 .best .bgo.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 /* 담은 후보 (2026-09-22 Benny: 선택이 곧 찜) */
-.hcell.inpick{box-shadow:inset 0 0 0 2.5px var(--ink)}
+.hcell.inpick,.hcell.full.inpick{background:var(--ink);color:#fff;opacity:1}
 .hcell{cursor:pointer}
 /* 날짜 칸 = 하루 전체 담기/빼기. 담겼으면 진하게 */
 .grid .dh.on{background:var(--ink);color:var(--card)}
@@ -914,7 +914,7 @@ header .hact .btn.pickbtn{background:rgba(var(--accent-rgb),.12);border-color:rg
    밴드매니저(band-manager)의 캘린더 부분만 떼어내 만든 단일 파일 앱.
    약속 하나 = 링크 하나(?m=<id>). 목록은 어디에도 나오지 않는다.        */
 
-const BUILD = "2026-09-28e";
+const BUILD = "2026-09-28f";
 
 /* 저장소 = Firebase `benny-apps` 의 Firestore (2026-09-28, Apps Script + 시트에서 이사)
    · meets/{id}              약속 한 건 (제목·날짜·시간대·후보·확정)
@@ -1898,8 +1898,8 @@ function renderCalView(){
       const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
       b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "");
       b.querySelector(".mk").textContent = m.mk;
-      b.querySelector(".tx").textContent = m.tx;
-      b.title = fmtFull(d) + " · " + winLabel(d);
+      b.querySelector(".tx").textContent = "";                      // 달력은 기호만 — 글자는 표에서
+      b.title = fmtFull(d) + " · " + (m.lb || winLabel(d));
       b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
       g.appendChild(b);
     }
@@ -2331,11 +2331,13 @@ function renderResult(){
     g.appendChild(dc);
     hs.forEach(h => {
       if (!win.includes(h)){ g.appendChild(cell("gc hcell off", "")); return; }
+      /* (2026-09-28 Benny: "녹색만 가득해서 보기가 힘들고, 선택된 것도 검정 테두리뿐이라 보기 힘들다")
+         → 진한 초록 = **전원** 되는 칸뿐, 나머지는 아주 옅게, 0명은 빈칸. 고른 칸 = 검정 바탕 흰 숫자 */
       const n = availAt(d,h).length;
-      const c = cell("gc hcell" + (n ? "" : " z"), String(n));
-      if (n && rs.length) c.style.background = "rgba(var(--accent-rgb)," + (0.12 + 0.72 * (n / rs.length)).toFixed(3) + ")";
-      if (n && n === rs.length) c.classList.add("full");
-      if (mine.has(h)) c.classList.add("inpick");
+      const all = n && n === rs.length;
+      const c = cell("gc hcell" + (n ? "" : " z") + (all ? " full" : ""), n ? String(n) : "");
+      if (n && !all && rs.length) c.style.background = "rgba(var(--accent-rgb)," + (0.05 + 0.20 * (n / rs.length)).toFixed(3) + ")";
+      if (mine.has(h)){ c.classList.add("inpick"); c.style.background = ""; }
       c.onclick = () => tapHour(d, h);
       g.appendChild(c);
     });
