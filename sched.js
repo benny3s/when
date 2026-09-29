@@ -854,8 +854,12 @@ function drawSheet(){
     th.innerHTML = '<span class="dl"><span class="dd"></span> <span class="dw"></span></span><span class="dow win"></span>';
     th.querySelector(".dd").textContent = (fixed ? "📌" : "") + fmtD(d);
     th.querySelector(".dw").textContent = fmtDow(d);
-    th.querySelector(".win").textContent = winOf(d).join("–");
-    th.title = "눌러서 이 날 시간대 바꾸기 · 후보에서 빼기";
+    /* 정한 날은 시간대 대신 정한 시간 (2026-09-29 Benny: "약속 시간보다 넓게 잡으면 확정돼도 시간이 안 보인다") */
+    const ft = fixed ? fixedTimes(d) : [];
+    const win = th.querySelector(".win");
+    win.textContent = ft.length ? ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "") : winOf(d).join("–");
+    if (ft.length) win.classList.add("fixt");
+    th.title = (ft.length ? "📌 " + ft.join(", ") + " 로 정함 (이 날 시간대 " + winLabel(d) + ") · " : "") + "눌러서 이 날 시간대 바꾸기 · 후보에서 빼기";
     th.onclick = () => openDay(d, "set");
     hr.appendChild(th);
   });
@@ -934,6 +938,11 @@ function drawSheet(){
 }
 /** 확정 문자열에 이 날짜가 들어 있나 */
 function isFixedDay(d){ return fixes().some(f => f.indexOf(d) === 0); }
+/** 그 날 정한 시간들 — ["11–13", ...] (시간 없는 확정은 뺀다) */
+function fixedTimes(d){
+  return fixes().map(pickParse).filter(p => p && p.d === d)
+    .sort((a, b) => a.from - b.from).map(p => p.from + "–" + p.to);
+}
 /** "2026-09-21 18:00~20:00" → "9/21(월) 18:00~20:00" (저장 값은 그대로 둔다) */
 function fmtFixed(f){
   /* 여러 개면 ', ' 로 이어져 있다 (2026-09-28) */
