@@ -42,8 +42,9 @@ const SCHED_HTML = {
   <!-- 표 -->
   <div class="card" id="sheetCard">
     <div class="seg" id="viewSeg" role="tablist">
-      <button class="segb" id="segCal" type="button" role="tab">📅 달력</button>
-      <button class="segb" id="segTab" type="button" role="tab">📋 표</button>
+      <!-- 달력 = 내 입력 전용, 표 = 모두의 응답 (2026-10-01 Benny: "달력/표 라는 단어가 어색해") -->
+      <button class="segb" id="segCal" type="button" role="tab">📅 내 입력</button>
+      <button class="segb" id="segTab" type="button" role="tab">👥 모두 보기</button>
     </div>
     <p class="hint" id="sheetHint" style="margin:0 0 10px"></p>
     <div id="calView" hidden>
@@ -483,6 +484,8 @@ let ST = { meet:null, members:[], dates:[], hourStart:10, hourEnd:22, windows:{}
 let M  = new URLSearchParams(location.search).get("m") || "";
 let me = "";
 let sel = new Set(), noteDraft = {}, noneSel = new Set();
+/* △ 일부만인데 시간은 안 고른 날 — 저장할 땐 hours = [-1] (2026-10-01 Benny: "일부의 경우 시간 선택 안 해도 되게") */
+let maybeSel = new Set();
 let dirty = false, saving = false;
 let whoOpen = false;
 
@@ -528,18 +531,23 @@ function snapLoad(){
    ⚠️ 저장 안 된 입력 위에 서버 데이터를 덮으면 안 된다 (밴드매니저 2026-09-19 사고) */
 function loadMine(force){
   if (!force && (dirty || saving)) return;
-  sel = new Set(); noteDraft = {}; noneSel = new Set();
+  sel = new Set(); noteDraft = {}; noneSel = new Set(); maybeSel = new Set();
   if (!me) return;
   const H = hoursOf()[me] || {}, N = notesOf()[me] || {};
   dates().forEach(d => {
     const v = H[d];
-    if (Array.isArray(v)){ v.length ? v.forEach(h => sel.add(key(d,h))) : noneSel.add(d); }
+    if (Array.isArray(v)){
+      if (v.length === 1 && v[0] === -1) maybeSel.add(d);
+      else v.length ? v.forEach(h => sel.add(key(d,h))) : noneSel.add(d);
+    }
     if (N[d]) noteDraft[d] = N[d];
   });
   dirty = false;
 }
 function myHours(d){ return hoursFor(d).filter(h => sel.has(key(d,h))); }
-function myAnswered(d){ return myHours(d).length > 0 || noneSel.has(d); }
+/** 기호용 내 시각 — 시간 미정 △ 이면 [-1] */
+function myMarkHours(d){ const on = myHours(d); return (!on.length && maybeSel.has(d)) ? [-1] : on; }
+function myAnswered(d){ return myHours(d).length > 0 || noneSel.has(d) || maybeSel.has(d); }
 /* 입력 중 표시. 버튼은 숨긴다 — 닫으면 저장되고, 실패했을 때만 renderAll 이 버튼을 띄운다 */
 function touch(){ dirty = true; $("#saveBtn").hidden = true; setStatus(""); }
 
@@ -715,6 +723,8 @@ function markOf(d, hrs, ans, mine){
   const full = hoursFor(d).length;
   /* tx = 칸에 쓰는 글자. ○ ✕ – 는 기호만 — 글자는 △ 의 되는 시간과 내 빈칸의 '입력' 뿐
      (2026-09-28 Benny: "글자가 많으면 뭘 봐야할지 보기 힘들어"). lb = 말로 풀어 쓴 것 (아래 줄 안내용) */
+  if (ans && hrs && hrs.length === 1 && hrs[0] === -1)
+    return { cls:"part", mk:"△", tx:"시간 미정", lb:"일부만 (시간 미정)" };
   if (ans && hrs && hrs.length){
     const whole = (hrs.length >= full && full > 0);
     return whole ? { cls:"all",  mk:"○", tx:"", lb:"다 돼요" }
@@ -767,7 +777,7 @@ function renderCalView(){
     const b = document.createElement("button"); b.type = "button"; b.dataset.d = d;
     b.innerHTML = '<span class="n"></span><span class="mk"></span><span class="tx"></span>';
     b.querySelector(".n").textContent = label;
-    const m = (me && !isOff(me)) ? markOf(d, myHours(d), myAnswered(d), true) : { cls: isOff(me) ? "na" : "none", mk:"–", tx:"", lb:"" };
+    const m = (me && !isOff(me)) ? markOf(d, myMarkHours(d), myAnswered(d), true) : { cls: isOff(me) ? "na" : "none", mk:"–", tx:"", lb:"" };
     b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "") + (d < today ? " past" : "");
     b.querySelector(".mk").textContent = m.mk;
     /* 정한 날은 날짜 앞 📌 + 맨 아래 정한 시간 (표의 날짜 머리와 같은 내용) */
@@ -850,25 +860,28 @@ function drawSheet(){
     hint.append(document.createTextNode(me + " 님은 이 시간표에 "));
     const bo = document.createElement("b"); bo.textContent = "참여하지 않아요";
     hint.append(bo, document.createTextNode(" — 입력할 칸이 없습니다. (⚙ 설정 → 멤버에서 켤 수 있어요)"));
-  } else if (!me){
-    hint.append(document.createTextNode("먼저 위에서 "));
-    const b0 = document.createElement("b"); b0.textContent = "이름";
-    hint.append(b0, document.createTextNode("을 고르면 내 줄이 생깁니다."));
   } else {
-    const todo = (ahead.length ? ahead : ds).filter(d => !myAnswered(d));   // 지난 날은 안 채워도 된다
-    if (!todo.length){
+    /* 안내 = 할 일 순서 (2026-10-01 Benny: "사람들이 뭘 해야 할지 모르겠대 — 지침으로") */
+    const todo = me ? (ahead.length ? ahead : ds).filter(d => !myAnswered(d)) : [];   // 지난 날은 안 채워도 된다
+    if (me && !todo.length){
       hint.classList.add("done");
-      const b1 = document.createElement("b"); b1.textContent = (ahead.length || ds.length) + "일 전부 입력했어요";
-      hint.append(b1, document.createTextNode(" 👍  칸을 다시 눌러 언제든 고칠 수 있습니다."));
+      hint.innerHTML = "<b>✅ 다 넣었어요!</b> 칸을 다시 누르면 언제든 고칠 수 있어요.";
     } else {
-      const b1 = document.createElement("b");
-      b1.textContent = todo.length + "일 더 남았어요";
-      hint.append(b1, document.createTextNode(" — 연두색 점선 칸("));
-      const b2 = document.createElement("b");
-      b2.textContent = todo.slice(0, 4).map(fmtD).join(", ") + (todo.length > 4 ? " …" : "");
-      hint.append(b2, document.createTextNode(")을 눌러 입력해주세요."));
+      const ol = document.createElement("ol"); ol.className = "guide";
+      const li = html => { const x = document.createElement("li"); x.innerHTML = html; ol.appendChild(x); };
+      const t = document.createElement("b"); t.textContent = "📝 이렇게 넣어주세요";
+      hint.appendChild(t);
+      li(me ? "<s>위 <b>누구세요?</b>에서 내 이름 고르기</s> ✓" : "위 <b>누구세요?</b>에서 <b>내 이름</b>을 누르기");
+      li("<b>점선 칸</b>(아직 안 넣은 날)을 누르기");
+      li("<b>○ 돼요 · △ 일부만 · ✕ 안 돼요 · – 미정</b> 중 하나 고르기 <span class=\"g-s\">(△ 는 되는 시간을 몰라도 돼요)</span>");
+      li("창을 닫으면 <b>자동 저장</b>");
+      hint.appendChild(ol);
+      if (me){
+        const p = document.createElement("p"); p.className = "g-left";
+        p.textContent = "남은 날 " + todo.length + "일 — " + todo.slice(0, 4).map(fmtD).join(", ") + (todo.length > 4 ? " …" : "");
+        hint.appendChild(p);
+      }
     }
-    /* 기호 설명 줄은 뺐다 — ○△✕ 는 보면 안다 (2026-09-28 Benny) */
   }
 
   /* ⚠️ 입력 표에는 '제일 많음' 추천을 **넣지 않는다**
@@ -940,7 +953,7 @@ function drawSheet(){
       if (d < today) td.classList.add("past");
       td.className += fixColCls(shown, d);                         // 정한 날 — 달력처럼 검정 테두리 (2026-09-30)
       const b  = document.createElement("button"); b.type = "button";
-      const hrs  = mine ? myHours(d) : (H[n] || {})[d];
+      const hrs  = mine ? myMarkHours(d) : (H[n] || {})[d];
       const ans  = mine ? myAnswered(d) : Array.isArray(hrs);
       const memo = mine ? (noteDraft[d] || "") : ((N[n] || {})[d] || "");
       const mk = markOf(d, hrs, ans, mine);
@@ -1043,7 +1056,7 @@ let dmNOpen = false;        // 미정을 눌러 이유 칸을 펼친 상태
 function dmMark(d){
   if (noneSel.has(d)) return "x";
   const on = myHours(d);
-  if (!on.length) return "";
+  if (!on.length) return maybeSel.has(d) ? "t" : "";
   return on.length >= hoursFor(d).length ? "o" : "t";
 }
 /** 날짜 머리 창의 요약 — 누가 되는지, 몇 시에 가장 많이 되는지 */
@@ -1156,6 +1169,7 @@ function renderDmHours(){
         hs.forEach(x => (x >= a && x <= z) ? sel.add(key(d,x)) : sel.delete(key(d,x)));
         dmFrom = null;
       }
+      myHours(d).length ? maybeSel.delete(d) : maybeSel.add(d);   // 시간을 다 지우면 '시간 미정'
       renderDmHours(); paintSheet(); touch();
     };
     box.appendChild(b);
@@ -1164,7 +1178,7 @@ function renderDmHours(){
   const st = $("#dmState");
   if (!dmMulti && dmFrom !== null) st.textContent = dmFrom + "시부터 — 끝 시간을 눌러주세요";
   else if (on.length)              st.textContent = runsOf(on) + " 가능";
-  else                             st.textContent = dmMulti ? "되는 시간을 하나씩 눌러주세요" : "시작 시간을 눌러주세요";
+  else                             st.textContent = dmMulti ? "되는 시간을 하나씩 눌러주세요" : "되는 시간을 알면 시작·끝을 눌러주세요 (몰라도 그냥 닫으면 저장돼요)";
   st.classList.toggle("ok", on.length > 0 && !(dmFrom !== null && !dmMulti));
   $("#dmMulti").textContent = dmMulti ? "↩ 한 구간으로 넣기" : "＋ 여러 구간 넣기";
 }
@@ -1237,7 +1251,7 @@ async function save(){
   dates().forEach(d => {
     /* ⚠️ 시간대 밖의 시간도 버리지 않는다 — 시간대를 좁혔다 넓혀도 응답이 살아 있게 */
     const hs = []; for (let h = 0; h < 24; h++) if (sel.has(key(d,h))) hs.push(h);
-    payload.hours[d] = hs.length ? hs : (noneSel.has(d) ? [] : null);
+    payload.hours[d] = hs.length ? hs : (noneSel.has(d) ? [] : (maybeSel.has(d) ? [-1] : null));
     payload.notes[d] = noteDraft[d] || "";
   });
   /* 🚨 빈 저장 막기 (2026-09-22r)
@@ -1589,18 +1603,26 @@ $("#dmName").onclick = askName;
 /* ○ — 한 번 누르면 끝: 시간 전부 + 이유 지우고 저장·닫기 */
 $("#dmO").onclick = () => {
   const d = dmDate; if (!d) return;
-  hoursFor(d).forEach(h => sel.add(key(d,h))); noneSel.delete(d);
+  hoursFor(d).forEach(h => sel.add(key(d,h))); noneSel.delete(d); maybeSel.delete(d);
   delete noteDraft[d]; $("#dmInput").value = "";
   dmPart = false; renderDm(); paintSheet(); touch();
   closeDay();
 };
 /* △ — 시간 버튼 + 이유를 펼친다. 버튼을 누르기 전까지 원래 답은 그대로 둔다(닫아도 안 날아가게) */
-$("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; dmNOpen = false; dmFrom = null; renderDm(); };
+/* △ — 누르는 순간 '일부만(시간 미정)' 으로 찍힌다. 시간은 골라도 되고 안 골라도 된다 (2026-10-01).
+   이미 일부 시간이 있으면 그대로, ○(전부)였으면 비우고 시간 미정으로 */
+$("#dmT").onclick = () => {
+  const d = dmDate; if (!d) return;
+  const on = myHours(d);
+  if (!on.length || on.length >= hoursFor(d).length){ hoursFor(d).forEach(h => sel.delete(key(d,h))); maybeSel.add(d); }
+  noneSel.delete(d);
+  dmPart = true; dmNOpen = false; dmFrom = null; renderDm(); paintSheet(); touch();
+};
 $("#dmMulti").onclick = () => { dmMulti = !dmMulti; dmFrom = null; renderDmHours(); };
 /* ✕ — 바로 '안 돼요' 로 찍는다. 이유 없이 닫아도 저장된다 */
 $("#dmX").onclick = () => {
   const d = dmDate; if (!d) return;
-  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d);
+  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d); maybeSel.delete(d);
   dmPart = false; dmNOpen = false; renderDm(); paintSheet(); touch();
   /* 키보드는 띄우지 않는다 — 이유는 적고 싶을 때만 칸을 누른다 (2026-09-28 Benny: "자동 키보드 불편해") */
 };
@@ -1608,7 +1630,7 @@ $("#dmX").onclick = () => {
 $("#dmN").onclick = () => {
   const d = dmDate; if (!d) return;
   /* 답은 지우고 이유 칸을 펼친다 — ✕ 처럼 이유 없이 닫아도 저장된다. 적어 둔 이유는 그대로 둔다 */
-  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.delete(d);
+  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.delete(d); maybeSel.delete(d);
   dmPart = false; dmNOpen = true; renderDm(); paintSheet(); touch();
 };
 /* ⚠️ 한글 조합 중 Enter 는 건너뛴다 (마지막 글자가 잘리는 걸 막는다) */

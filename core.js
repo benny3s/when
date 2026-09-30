@@ -143,8 +143,10 @@ function parsePicks(raw){
   });
   return out.sort();
 }
+/** 시각 목록 정리. -1 은 '△ 일부만 · 시간 미정' 표시 — 다른 시각이 있으면 버린다 (2026-10-01) */
 function cleanHours(arr){
-  return Array.from(new Set((arr || []).map(x => parseInt(x, 10)).filter(h => h >= 0 && h <= 23))).sort((a, b) => a - b);
+  const a = Array.from(new Set((arr || []).map(x => parseInt(x, 10)).filter(h => h >= -1 && h <= 23))).sort((a, b) => a - b);
+  return a.length > 1 ? a.filter(h => h >= 0) : a;
 }
 function pad2(n){ return String(n).padStart(2, "0"); }
 /** Timestamp → "2026-09-28T14:03:05" (화면이 쓰던 옛 모양 그대로) */

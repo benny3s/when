@@ -586,3 +586,10 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .dy-x{color:var(--muted);font-size:12.5px}
 .dm-more{margin-top:4px;border-top:1px solid var(--line);padding-top:8px}
 .dm-more summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted);list-style:revert}
+
+/* 표 위 안내 = 할 일 순서 (2026-10-01) */
+.callout ol.guide{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.callout ol.guide li{line-height:1.5}
+.callout ol.guide s{color:var(--muted);text-decoration:line-through}
+.callout .g-s{color:var(--muted);font-size:12px}
+.callout .g-left{margin:6px 0 0;font-size:12.5px;color:var(--accent);font-weight:700}
