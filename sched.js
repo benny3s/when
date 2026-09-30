@@ -1065,7 +1065,9 @@ function openDay(d, mode){
   dmPart = dmMark(d) === "t";                    // 이미 △ 면 시간 버튼을 펼쳐서 연다
   dmFrom = null;
   dmMulti = runsOf(myHours(d)).indexOf(",") >= 0; // 이미 여러 구간이면 그 방식으로 연다
-  $("#dmTitle").textContent = fmtFull(d) + " · " + winLabel(d);
+  /* 내 입력 창: 정한 날이면 시간대 대신 정한 시간 (표 머리와 같게). 설정 창은 시간대를 고치는 곳이라 시간대 그대로 */
+  const ftT = (dmMode === "edit" && isFixedDay(d)) ? fixedTimes(d) : [];
+  $("#dmTitle").textContent = fmtFull(d) + " · " + (ftT.length ? "📌 " + ftT.join(", ") + "시" : winLabel(d));
   $("#dmInput").value = noteDraft[d] || "";
   renderDmAdmin(d);
   const fx = isFixedDay(d);
