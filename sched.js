@@ -619,11 +619,14 @@ function renderWho(){
   $("#whoKeepRow").hidden = !me;                    // ＋친구 추가 = 펼친 상태 아래쪽
   $("#whoH2").hidden = !!me;                        // 이름이 있으면 위 줄이 이미 알려준다
 
-  const mem = members();
+  /* 이 시간표에서 뺀 사람도 '누구세요' 에는 흐리게 남긴다 — 이름(로그인)은 밴드 단위라서
+     (2026-10-01 Benny: "캘린더에서 멤버 뺐는데, 멤버 로그인도 사라져버렸어") */
+  const mem = members().concat(offList().filter(n => !members().includes(n)));
   const box = $("#whoChips"); box.innerHTML = "";
   mem.forEach(n => {
     const b = document.createElement("button");
-    b.className = "chip";
+    b.className = "chip" + (isOff(n) ? " off" : "");
+    if (isOff(n)) b.title = "이 시간표에는 참여하지 않아요";
     b.type = "button"; b.textContent = n + (n === me ? " (나)" : "");
     b.setAttribute("aria-pressed", String(n === me));
     b.onclick = () => pickMe(n);
@@ -688,6 +691,11 @@ function pickMe(n){
   try { localStorage.setItem("meet_lastname", n); } catch(e){}
   saveMe(n);
   $("#whoInput").value = "";
+  if (isOff(n)){                                    // 이 시간표에서 뺀 사람 — 다시 만들지 않고 이름만 고른다
+    loadMine(true); renderAll();
+    setStatus(n + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정의 멤버에서 켤 수 있어요");
+    return;
+  }
   if (!members().includes(n)){
     act({ action:"member_add", name:n }, n + " 님 추가됨", () => { if (!ST.members.includes(n)) ST.members.push(n); });
     return;
@@ -836,7 +844,7 @@ function drawSheet(){
   if (me && isOff(me)){
     hint.append(document.createTextNode(me + " 님은 이 시간표에 "));
     const bo = document.createElement("b"); bo.textContent = "참여하지 않아요";
-    hint.append(bo, document.createTextNode(" — 입력할 칸이 없습니다. (⚙ 설정 → 참여 멤버에서 켤 수 있어요)"));
+    hint.append(bo, document.createTextNode(" — 입력할 칸이 없습니다. (⚙ 설정 → 멤버에서 켤 수 있어요)"));
   } else if (!me){
     hint.append(document.createTextNode("먼저 위에서 "));
     const b0 = document.createElement("b"); b0.textContent = "이름";
@@ -1090,7 +1098,7 @@ function renderDmHours(){
   $("#dmMulti").textContent = dmMulti ? "↩ 한 구간으로 넣기" : "＋ 여러 구간 넣기";
 }
 function openDay(d, mode){
-  if (mode !== "set" && isOff(me)){ setStatus(me + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정 → 참여 멤버에서 켤 수 있어요"); return; }
+  if (mode !== "set" && isOff(me)){ setStatus(me + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정 → 멤버에서 켤 수 있어요"); return; }
   dmDate = d;
   dmMode = (mode === "set") ? "set" : "edit";
   dmSetOpen = false;

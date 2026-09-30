@@ -557,3 +557,6 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .cal.cv.flow{grid-template-columns:repeat(4,minmax(0,1fr))}
 .cal.cv.flow .d .n{font-size:12px}
 .calnav:has(b:empty){display:none}
+
+/* 이 시간표에서 뺀 사람 — 누구세요 칩을 흐리게 (2026-10-01) */
+#whoChips .chip.off{opacity:.45}
