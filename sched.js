@@ -739,7 +739,15 @@ function renderCalView(){
     const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
     b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "") + (d < today ? " past" : "");
     b.querySelector(".mk").textContent = m.mk;
-    b.title = fmtFull(d) + " · " + winLabel(d);
+    /* 정한 날은 날짜 앞 📌 + 맨 아래 정한 시간 (표의 날짜 머리와 같은 내용) */
+    const ft = isFixedDay(d) ? fixedTimes(d) : [];
+    if (isFixedDay(d)) b.querySelector(".n").textContent = "📌" + label;
+    if (ft.length){
+      const fx = document.createElement("span"); fx.className = "fx";
+      fx.textContent = ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "");
+      b.appendChild(fx);
+    }
+    b.title = fmtFull(d) + " · " + (ft.length ? "📌 " + ft.join(", ") : winLabel(d));
     b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
     return b;
   };
@@ -937,11 +945,21 @@ function drawSheet(){
   tf.appendChild(fr); t.appendChild(tf);
 }
 /** 확정 문자열에 이 날짜가 들어 있나 */
-function isFixedDay(d){ return fixes().some(f => f.indexOf(d) === 0); }
+function isFixedDay(d){ return shownFixes().some(f => f.indexOf(d) === 0); }
+/** 화면에 📌 로 보일 것 — 📌 정한 것 + 페이지가 따로 알려 주는 것(밴드매니저: 이력의 '예정' 합주).
+    **표시 전용** — 📌 정하기/풀기(fixes·setFixes)는 건드리지 않는다
+    (2026-09-30 Benny: "10/4 합주가 잡혀있는데 달력에는 표시가 안되어있어") */
+function shownFixes(){
+  let extra = [];
+  if (typeof extraFixes === "function"){ try { extra = extraFixes() || []; } catch(e){} }
+  return Array.from(new Set(fixes().concat(extra)));
+}
 /** 그 날 정한 시간들 — ["11–13", ...] (시간 없는 확정은 뺀다) */
 function fixedTimes(d){
-  return fixes().map(pickParse).filter(p => p && p.d === d)
-    .sort((a, b) => a.from - b.from).map(p => p.from + "–" + p.to);
+  const seen = new Set();
+  return shownFixes().map(pickParse).filter(p => p && p.d === d)
+    .sort((a, b) => a.from - b.from).map(p => p.from + "–" + p.to)
+    .filter(t => !seen.has(t) && seen.add(t));
 }
 /** "2026-09-21 18:00~20:00" → "9/21(월) 18:00~20:00" (저장 값은 그대로 둔다) */
 function fmtFixed(f){

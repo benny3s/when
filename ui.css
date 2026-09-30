@@ -277,6 +277,7 @@ html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
 .cal.cv .d.s-none .mk,.cal.cv .d.s-none .tx{color:var(--accent)}
 .cal.cv .d.s-none{animation:breathe 2.6s ease-in-out infinite}
 .cal.cv .d.fixday{box-shadow:inset 0 0 0 2px var(--ink)}
+.cal.cv .d .fx{font-size:9.5px;font-weight:800;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){ .cal.cv .d.s-none{animation:none;opacity:1} }
 
 /* 앱 안 브라우저 안내 막대 */
