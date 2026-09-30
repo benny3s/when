@@ -85,16 +85,21 @@ const SCHED_HTML = {
       </div>
     </div>
     <div class="dm-set" id="dmSet" hidden>
-      <div class="dm-admin">
-        <span class="hint" style="margin:0">이 날 시간</span>
-        <span id="dmWin"></span>
-        <span style="flex:1"></span>
-        <button class="btn ghost danger" id="dmDrop" type="button">후보에서 빼기</button>
-      </div>
+      <!-- 그날 요약 — 몇 명 되는지 · 시간별 인원 · 사람별 (2026-10-01 Benny: "헤더 날짜를 누르면 결과보기처럼 의미 있는 데이터") -->
+      <div id="dmDay"></div>
       <div class="dm-hap" id="dmFixRow">
         <span id="dmFixNow"></span>
         <button class="btn" id="dmFix" type="button">📌 이 날로 정하기</button>
       </div>
+      <details class="dm-more">
+        <summary>⚙ 시간대 바꾸기 · 후보에서 빼기</summary>
+        <div class="dm-admin" style="margin-top:8px">
+          <span class="hint" style="margin:0">이 날 시간</span>
+          <span id="dmWin"></span>
+          <span style="flex:1"></span>
+          <button class="btn ghost danger" id="dmDrop" type="button">후보에서 빼기</button>
+        </div>
+      </details>
     </div>
   </div>
 </div>
@@ -895,7 +900,11 @@ function drawSheet(){
     /* 정한 날은 시간대 대신 정한 시간 (2026-09-29 Benny: "약속 시간보다 넓게 잡으면 확정돼도 시간이 안 보인다") */
     const ft = fixed ? fixedTimes(d) : [];
     const win = th.querySelector(".win");
-    win.textContent = ft.length ? ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "") : winOf(d).join("–");
+    /* 정하지 않은 날의 시간대는 **기본과 다를 때만** 회색으로 — 초록 '9–22' 가 정한 시간처럼 보였다
+       (2026-10-01 Benny: "동그라미 친 부분이 헷갈리게 만들어"). 기본 시간대는 칸을 누르면 창 제목에 나온다 */
+    const [wa, wb] = winOf(d), isDefWin = wa === ST.hourStart && wb === ST.hourEnd;
+    win.textContent = ft.length ? ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "") : (isDefWin ? "" : wa + "–" + wb);
+    if (!ft.length) win.classList.add("plain");
     if (ft.length) win.classList.add("fixt");
     th.title = (ft.length ? "📌 " + ft.join(", ") + " 로 정함 (이 날 시간대 " + winLabel(d) + ") · " : "") + "눌러서 이 날 시간대 바꾸기 · 후보에서 빼기";
     th.onclick = () => openDay(d, "set");
@@ -1037,6 +1046,66 @@ function dmMark(d){
   if (!on.length) return "";
   return on.length >= hoursFor(d).length ? "o" : "t";
 }
+/** 날짜 머리 창의 요약 — 누가 되는지, 몇 시에 가장 많이 되는지 */
+function renderDayInfo(d){
+  const box = $("#dmDay"); if (!box) return;
+  box.innerHTML = "";
+  const mem = members(), H = hoursOf(), N = notesOf(), hs = hoursFor(d), tot = mem.length;
+  const groups = { all: [], part: [], no: [], none: [] };
+  mem.forEach(n => {
+    const hrs = (H[n] || {})[d];
+    const m = markOf(d, hrs, Array.isArray(hrs), false);
+    groups[m.cls].push({ n, tx: m.tx, note: (N[n] || {})[d] || "" });
+  });
+  /* 한 줄 요약 */
+  const sum = document.createElement("div"); sum.className = "dy-sum";
+  [["all","○","돼요"],["part","△","일부만"],["no","✕","안 돼요"],["none","–","미정"]].forEach(([k, mk, lb]) => {
+    const s = document.createElement("span"); s.className = "dy-pill " + k;
+    s.textContent = mk + " " + lb + " " + groups[k].length;
+    sum.appendChild(s);
+  });
+  box.appendChild(sum);
+  /* 시간별 인원 — 진한 칸 = 전원 */
+  if (hs.length && tot){
+    const cnt = hs.map(h => availAt(d, h).length), best = Math.max.apply(null, cnt);
+    const strip = document.createElement("div"); strip.className = "dy-strip";
+    hs.forEach((h, i) => {
+      const col = document.createElement("div"); col.className = "dy-h";
+      const n = cnt[i];
+      const cellEl = document.createElement("div");
+      cellEl.className = "dy-c" + (n && n === tot ? " full" : "") + (n === 0 ? " z" : "") + (n && n === best && n !== tot ? " best" : "");
+      if (n && n !== tot) cellEl.style.background = "rgba(var(--accent-rgb)," + (0.08 + 0.32 * (n / tot)).toFixed(3) + ")";
+      cellEl.textContent = n ? String(n) : "";
+      cellEl.title = h + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "");
+      const lab = document.createElement("div"); lab.className = "dy-l"; lab.textContent = String(h);
+      col.append(cellEl, lab); strip.appendChild(col);
+    });
+    const bestLine = document.createElement("p"); bestLine.className = "dy-best";
+    if (best > 0){
+      const bh = hs.filter((h, i) => cnt[i] === best);
+      bestLine.innerHTML = "";
+      const b = document.createElement("b"); b.textContent = runsOf(bh, true) + "시";
+      bestLine.append("가장 많이 되는 시간 ", b, " · " + best + " / " + tot + "명" + (best === tot ? " (전원 🎉)" : ""));
+    } else bestLine.textContent = "아직 이 날 되는 사람이 없어요";
+    box.append(bestLine, strip);
+  }
+  /* 사람별 — 되는 순서대로. △ 는 시간, ✕ 는 이유 */
+  const list = document.createElement("div"); list.className = "dy-list";
+  [["all","○ 돼요"],["part","△ 일부만"],["no","✕ 안 돼요"],["none","– 미정"]].forEach(([k, title]) => {
+    if (!groups[k].length) return;
+    const row = document.createElement("div"); row.className = "dy-row " + k;
+    const t = document.createElement("span"); t.className = "dy-t"; t.textContent = title;
+    const who = document.createElement("span"); who.className = "dy-who";
+    groups[k].forEach((p, i) => {
+      if (i) who.append(" · ");
+      const nm = document.createElement("b"); nm.textContent = p.n; who.appendChild(nm);
+      const extra = [p.tx, p.note].filter(Boolean).join(" ");
+      if (extra){ const e = document.createElement("span"); e.className = "dy-x"; e.textContent = " " + extra; who.appendChild(e); }
+    });
+    row.append(t, who); list.appendChild(row);
+  });
+  box.appendChild(list);
+}
 function renderDm(){
   const d = dmDate; if (!d) return;
   const setMode = dmMode === "set";
@@ -1044,8 +1113,10 @@ function renderDm(){
   $("#dmMine").hidden   = setMode || !me;
   $("#dmSet").hidden    = !(setMode || dmSetOpen);
   $("#dmSet").classList.toggle("solo", setMode);
-  $("#dmSum").textContent = setMode ? "이 날의 시간대 · 확정 · 후보에서 빼기" : (me ? me + " 님, 이 날 되세요?" : "");
-  if (setMode || !me) return;
+  $("#dmSum").textContent = setMode ? "" : (me ? me + " 님, 이 날 되세요?" : "");
+  $("#dmSum").hidden = setMode;
+  if (setMode){ renderDayInfo(d); return; }
+  if (!me) return;
   const mk = dmMark(d), show = dmPart ? "t" : mk;
   $("#dmO").setAttribute("aria-pressed", String(show === "o"));
   $("#dmT").setAttribute("aria-pressed", String(show === "t"));
@@ -1152,8 +1223,7 @@ function renderDmAdmin(d){
         () => { ST.windows = w; });
     renderDmHours();
   };
-  s1.onclick = () => openHourPick(s1, "시작 시각", apply);
-  s2.onclick = () => openHourPick(s2, "끝 시각",  apply);
+  bindRange(s1, s2, apply);                                         // 시작·끝을 한 번에 (범위)
   const u = document.createElement("span"); u.className = "hint"; u.style.margin = "0"; u.textContent = "~";
   box.append(s1, u, s2);
 }
@@ -1583,8 +1653,7 @@ const hourApply = () => {
   act({ action:"meet_set", hourStart:a, hourEnd:b }, "기본 시간대 " + a + "–" + b + "시",
       () => { ST.hourStart = a; ST.hourEnd = b; });
 };
-$("#c_hs").onclick = () => openHourPick($("#c_hs"), "시작 시각", hourApply);
-$("#c_he").onclick = () => openHourPick($("#c_he"), "끝 시각",  hourApply);
+bindRange($("#c_hs"), $("#c_he"), hourApply);                      // 시작·끝을 한 번에 (범위)
 
 /* ═══ 친구 추가 — 내 이름(프로필)은 절대 안 바뀐다
    (2026-09-22j Benny: "친구 추가가 쉽지않네 여기선 (자꾸 프로필 바뀜) 프로필 변경 없이 쉽게 추가로")

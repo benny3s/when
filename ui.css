@@ -441,6 +441,7 @@ table.sheet tr.me .nmbtn .sub{color:var(--accent);opacity:.8}
 table.sheet th .dow.fix{color:var(--accent);font-weight:700;font-size:10px}
 table.sheet th.dhead.hasFix{background:rgba(var(--accent-rgb),.07)}
 table.sheet th .dow.win.fixt{font-weight:800}
+table.sheet th .dow.win.plain{color:var(--muted);font-weight:500;font-size:10px}   /* 정하지 않은 날의 (기본과 다른) 시간대 */
 /* 정한 날 = 세로 한 줄을 검정 테두리로 (달력의 정한 날 칸과 같은 표시 · 2026-09-30 Benny "일관성")
    붙어 있는 정한 날은 한 덩어리 — 바깥 선(fixL 왼쪽 · fixR 오른쪽)만 굵게, 안쪽은 원래 얇은 선 */
 table.sheet .fixcol{--fl:0px;--fr:0px}
@@ -560,3 +561,28 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 
 /* 이 시간표에서 뺀 사람 — 누구세요 칩을 흐리게 (2026-10-01) */
 #whoChips .chip.off{opacity:.45}
+
+/* 날짜 머리 창 — 그날 요약 (2026-10-01) */
+.dy-sum{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 12px}
+.dy-pill{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted)}
+.dy-pill.all{color:var(--accent);border-color:rgba(var(--accent-rgb),.45)}
+.dy-pill.part{color:var(--amber);border-color:rgba(138,109,31,.4)}
+.dy-pill.no{color:var(--warn);border-color:rgba(180,71,47,.35)}
+.dy-best{margin:0 0 6px;font-size:13px;color:var(--muted)}
+.dy-best b{color:var(--ink)}
+.dy-strip{display:flex;gap:2px;overflow-x:auto;padding-bottom:4px;margin:0 0 12px}
+.dy-h{flex:1 0 20px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.dy-c{width:100%;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--card)}
+.dy-c.full{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.dy-c.best{border-color:var(--accent)}
+.dy-c.z{background:transparent;border-style:dashed}
+.dy-l{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dy-list{display:flex;flex-direction:column;gap:7px;margin:0 0 12px}
+.dy-row{display:flex;gap:8px;font-size:13.5px;line-height:1.5}
+.dy-t{flex:0 0 64px;font-weight:700;color:var(--muted)}
+.dy-row.all .dy-t{color:var(--accent)} .dy-row.part .dy-t{color:var(--amber)} .dy-row.no .dy-t{color:var(--warn)}
+.dy-who b{font-weight:700}
+.dy-x{color:var(--muted);font-size:12.5px}
+.dm-more{margin-top:4px;border-top:1px solid var(--line);padding-top:8px}
+.dm-more summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted);list-style:revert}

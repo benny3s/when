@@ -226,6 +226,36 @@ function openHourPick(el, title, onPick){
   openModal("hourModal");
 }
 function hourVal(el){ return +el.dataset.h; }
+/** 시간대를 **범위로** 한 번에 — 시작 칸, 끝 칸 두 번 누르면 끝
+    (2026-10-01 Benny: "9~22시 같은 건 하나씩 말고 범위로 한 번에, △ 입력처럼")
+    칸 = 그 시각부터 한 시간. a 칸 ~ z 칸을 고르면 시간대는 a시 ~ (z+1)시 */
+let rpA = null;
+function openRangePick(elA, elB, onPick){
+  const cur = [hourVal(elA), hourVal(elB)];
+  rpA = null;
+  const draw = () => {
+    $("#hpTitle").textContent = rpA === null ? "시작 시간을 눌러주세요" : rpA + "시부터 — 끝 시간을 눌러주세요";
+    const g = $("#hpGrid"); g.innerHTML = "";
+    for (let h = 0; h <= 23; h++){
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = String(h);
+      b.setAttribute("aria-label", h + "시");
+      b.setAttribute("aria-pressed", String(rpA === null ? (h >= cur[0] && h < cur[1]) : h === rpA));
+      b.onclick = () => {
+        if (rpA === null){ rpA = h; draw(); return; }
+        const a = Math.min(rpA, h), z = Math.max(rpA, h) + 1;
+        setHourBtn(elA, 0, 23, a); setHourBtn(elB, 1, 24, z);
+        rpA = null;
+        closeModal("hourModal");
+        if (onPick) onPick(a, z);
+      };
+      g.appendChild(b);
+    }
+  };
+  draw(); openModal("hourModal");
+}
+/** 시작·끝 두 버튼 어느 쪽을 눌러도 범위 고르기로 */
+function bindRange(elA, elB, onPick){ elA.onclick = elB.onclick = () => openRangePick(elA, elB, onPick); }
 
 /* ═══ 창 공통 동작 ═══ */
 window.addEventListener("popstate", () => {
