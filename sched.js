@@ -856,7 +856,7 @@ function drawSheet(){
   shown.forEach(d => {
     const th = document.createElement("th");
     const fixed = isFixedDay(d);
-    th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix fixcol" : "") + (d < today ? " past" : "");
+    th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix" : "") + fixColCls(shown, d) + (d < today ? " past" : "");
     /* 두 줄로 — '10/5 월' / '18–22' ('시' 는 뺀다). 정한 날은 날짜 앞에 📌 (2026-09-28 Benny: "세 줄이라 정신없어") */
     th.innerHTML = '<span class="dl"><span class="dd"></span> <span class="dw"></span></span><span class="dow win"></span>';
     th.querySelector(".dd").textContent = (fixed ? "📌" : "") + fmtD(d);
@@ -898,7 +898,7 @@ function drawSheet(){
     shown.forEach(d => {
       const td = document.createElement("td");
       if (d < today) td.classList.add("past");
-      if (isFixedDay(d)) td.classList.add("fixcol");             // 정한 날 — 달력처럼 검정 테두리로 한 줄 (2026-09-30)
+      td.className += fixColCls(shown, d);                         // 정한 날 — 달력처럼 검정 테두리 (2026-09-30)
       const b  = document.createElement("button"); b.type = "button";
       const hrs  = mine ? myHours(d) : (H[n] || {})[d];
       const ans  = mine ? myAnswered(d) : Array.isArray(hrs);
@@ -934,7 +934,7 @@ function drawSheet(){
   fr.appendChild(f0);
   if (pastCol) fr.appendChild(document.createElement("td")).className = "pastcol";
   shown.forEach(d => {
-    const td = document.createElement("td"); td.className = "cnt" + (d < today ? " past" : "") + (isFixedDay(d) ? " fixcol" : "");
+    const td = document.createElement("td"); td.className = "cnt" + (d < today ? " past" : "") + fixColCls(shown, d);
     let best = 0;
     hoursFor(d).forEach(h => { const c = availAt(d,h).length; if (c > best) best = c; });
     td.textContent = best ? best + "명" : "–";
@@ -946,6 +946,14 @@ function drawSheet(){
 }
 /** 확정 문자열에 이 날짜가 들어 있나 */
 function isFixedDay(d){ return shownFixes().some(f => f.indexOf(d) === 0); }
+/** 표에서 정한 날 칸의 테두리 — 나란히 붙은 정한 날은 **한 덩어리**로 바깥만 그린다
+    (2026-09-30 Benny: "인접한 거끼리 두 줄로 보여서 지저분") → fixL = 왼쪽 선, fixR = 오른쪽 선 */
+function fixColCls(list, d){
+  if (!isFixedDay(d)) return "";
+  const i = list.indexOf(d);
+  const prev = i > 0 && isFixedDay(list[i - 1]), next = i >= 0 && i < list.length - 1 && isFixedDay(list[i + 1]);
+  return " fixcol" + (prev ? "" : " fixL") + (next ? "" : " fixR");
+}
 /** 화면에 📌 로 보일 것 — 📌 정한 것 + 페이지가 따로 알려 주는 것(밴드매니저: 이력의 '예정' 합주).
     **표시 전용** — 📌 정하기/풀기(fixes·setFixes)는 건드리지 않는다
     (2026-09-30 Benny: "10/4 합주가 잡혀있는데 달력에는 표시가 안되어있어") */

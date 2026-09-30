@@ -441,10 +441,14 @@ table.sheet tr.me .nmbtn .sub{color:var(--accent);opacity:.8}
 table.sheet th .dow.fix{color:var(--accent);font-weight:700;font-size:10px}
 table.sheet th.dhead.hasFix{background:rgba(var(--accent-rgb),.07)}
 table.sheet th .dow.win.fixt{font-weight:800}
-/* 정한 날 = 세로 한 줄을 검정 테두리로 (달력의 정한 날 칸과 같은 표시 · 2026-09-30 Benny "일관성") */
-table.sheet th.fixcol{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink),inset 0 2px 0 var(--ink)}
-table.sheet td.fixcol{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink)}
-table.sheet tfoot td.fixcol{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink),inset 0 -2px 0 var(--ink)}
+/* 정한 날 = 세로 한 줄을 검정 테두리로 (달력의 정한 날 칸과 같은 표시 · 2026-09-30 Benny "일관성")
+   붙어 있는 정한 날은 한 덩어리 — 바깥 선(fixL 왼쪽 · fixR 오른쪽)만 굵게, 안쪽은 원래 얇은 선 */
+table.sheet .fixcol{--fl:0px;--fr:0px}
+table.sheet .fixcol.fixL{--fl:2px}
+table.sheet .fixcol.fixR{--fr:2px}
+table.sheet th.fixcol{box-shadow:inset var(--fl) 0 0 var(--ink),inset calc(var(--fr) * -1) 0 0 var(--ink),inset 0 2px 0 var(--ink)}
+table.sheet td.fixcol{box-shadow:inset var(--fl) 0 0 var(--ink),inset calc(var(--fr) * -1) 0 0 var(--ink)}
+table.sheet tfoot td.fixcol{box-shadow:inset var(--fl) 0 0 var(--ink),inset calc(var(--fr) * -1) 0 0 var(--ink),inset 0 -2px 0 var(--ink)}
 table.sheet tfoot td.cnt{text-align:center;font-size:11.5px;color:var(--muted);padding:6px 4px;
   font-variant-numeric:tabular-nums;background:var(--card)}
 table.sheet tfoot td.cnt.all{color:var(--accent);font-weight:700}
