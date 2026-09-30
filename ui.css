@@ -593,3 +593,7 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .callout ol.guide s{color:var(--muted);text-decoration:line-through}
 .callout .g-s{color:var(--muted);font-size:12px}
 .callout .g-left{margin:6px 0 0;font-size:12.5px;color:var(--accent);font-weight:700}
+
+/* 그 날 창은 위에 붙인다 — ✕·△ 를 누르면 창 높이가 바뀌어 가운데 정렬이면 버튼이 위아래로 튀었다
+   (2026-10-01 Benny: "세모 엑스 눌러도 반응이 없다" — 누른 뒤 버튼 자리가 60px 넘게 움직임) */
+.modal#dayModal{align-items:flex-start;padding-top:max(12px,9vh)}
