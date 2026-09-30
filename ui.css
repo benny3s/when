@@ -441,6 +441,10 @@ table.sheet tr.me .nmbtn .sub{color:var(--accent);opacity:.8}
 table.sheet th .dow.fix{color:var(--accent);font-weight:700;font-size:10px}
 table.sheet th.dhead.hasFix{background:rgba(var(--accent-rgb),.07)}
 table.sheet th .dow.win.fixt{font-weight:800}
+/* 정한 날 = 세로 한 줄을 검정 테두리로 (달력의 정한 날 칸과 같은 표시 · 2026-09-30 Benny "일관성") */
+table.sheet th.fixcol{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink),inset 0 2px 0 var(--ink)}
+table.sheet td.fixcol{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink)}
+table.sheet tfoot td.fixcol{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink),inset 0 -2px 0 var(--ink)}
 table.sheet tfoot td.cnt{text-align:center;font-size:11.5px;color:var(--muted);padding:6px 4px;
   font-variant-numeric:tabular-nums;background:var(--card)}
 table.sheet tfoot td.cnt.all{color:var(--accent);font-weight:700}

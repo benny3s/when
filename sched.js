@@ -856,7 +856,7 @@ function drawSheet(){
   shown.forEach(d => {
     const th = document.createElement("th");
     const fixed = isFixedDay(d);
-    th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix" : "") + (d < today ? " past" : "");
+    th.className = "dhead" + (dObj(d).getDay() === 0 ? " sun" : "") + (fixed ? " hasFix fixcol" : "") + (d < today ? " past" : "");
     /* 두 줄로 — '10/5 월' / '18–22' ('시' 는 뺀다). 정한 날은 날짜 앞에 📌 (2026-09-28 Benny: "세 줄이라 정신없어") */
     th.innerHTML = '<span class="dl"><span class="dd"></span> <span class="dw"></span></span><span class="dow win"></span>';
     th.querySelector(".dd").textContent = (fixed ? "📌" : "") + fmtD(d);
@@ -898,6 +898,7 @@ function drawSheet(){
     shown.forEach(d => {
       const td = document.createElement("td");
       if (d < today) td.classList.add("past");
+      if (isFixedDay(d)) td.classList.add("fixcol");             // 정한 날 — 달력처럼 검정 테두리로 한 줄 (2026-09-30)
       const b  = document.createElement("button"); b.type = "button";
       const hrs  = mine ? myHours(d) : (H[n] || {})[d];
       const ans  = mine ? myAnswered(d) : Array.isArray(hrs);
@@ -933,7 +934,7 @@ function drawSheet(){
   fr.appendChild(f0);
   if (pastCol) fr.appendChild(document.createElement("td")).className = "pastcol";
   shown.forEach(d => {
-    const td = document.createElement("td"); td.className = "cnt" + (d < today ? " past" : "");
+    const td = document.createElement("td"); td.className = "cnt" + (d < today ? " past" : "") + (isFixedDay(d) ? " fixcol" : "");
     let best = 0;
     hoursFor(d).forEach(h => { const c = availAt(d,h).length; if (c > best) best = c; });
     td.textContent = best ? best + "명" : "–";
