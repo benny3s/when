@@ -254,7 +254,8 @@ function buildST(){
   const m = live.meet;
   if (!m){ if (live.meetState === "gone") out.gone = true; return out; }
   out.meet = { id: live.id, title: m.title || "", place: m.place || "", memo: m.memo || "",
-               fixed: m.fixed || "", owner: m.owner || "", made: m.made || "" };
+               fixed: m.fixed || "", owner: m.owner || "", made: m.made || "",
+               off: cleanOff(m.off) };
   out.hourStart = clampHour(m.hourStart, 10);
   out.hourEnd   = clampHour(m.hourEnd, 22);
   if (out.hourEnd <= out.hourStart){ out.hourStart = 10; out.hourEnd = 22; }
@@ -265,7 +266,10 @@ function buildST(){
   (live.people || []).slice().sort((a, b) => ms(a.added) - ms(b.added)).forEach(p => {
     const n = String(p.name || "").trim();
     if (!n || out.pid[n]) return;                  // 같은 이름이 둘이면 먼저 들어온 쪽
-    out.members.push(n); out.pid[n] = p._id;
+    out.pid[n] = p._id;
+    /* 이 시간표에서 뺀 사람(off)은 명단·표·결과·인원에서 빠진다. 입력은 지우지 않는다 → 다시 켜면 그대로 (2026-09-30) */
+    if (out.meet.off.includes(n)) return;
+    out.members.push(n);
     const H = {}, N = {};
     for (const d in (p.hours || {})) if (Array.isArray(p.hours[d])) H[d] = cleanHours(p.hours[d]);
     for (const d in (p.notes || {})) if (p.notes[d]) N[d] = String(p.notes[d]);
@@ -273,9 +277,23 @@ function buildST(){
     if (Object.keys(N).length) out.notes[n] = N;
     const e = stampOf(p.edited); if (e) out.edited[n] = e;
   });
+  /* 페이지가 순서를 정해 주면 따른다 (밴드매니저: 밴드 멤버 순서) — 없는 이름은 뒤에 원래 순서대로 */
+  if (typeof memberOrder === "function"){
+    const o = memberOrder() || [], idx = n => { const i = o.indexOf(n); return i < 0 ? 1e6 : i; };
+    out.members = out.members.map((n, k) => [n, k]).sort((x, y) => idx(x[0]) - idx(y[0]) || x[1] - y[1]).map(x => x[0]);
+  }
   return out;
 }
 function pidOf(n){ return buildST().pid[n] || ""; }
+/** 이 시간표에서 뺀 사람들 — 배열/JSON/쉼표 무엇이 와도 이름 배열로 */
+function cleanOff(v){
+  let a = v;
+  if (typeof a === "string"){ try { a = JSON.parse(a); } catch(e){ a = a.split(","); } }
+  if (!Array.isArray(a)) return [];
+  return Array.from(new Set(a.map(x => String(x || "").trim().slice(0, 30)).filter(Boolean))).slice(0, 50);
+}
+function offList(){ return (meet() && meet().off) || []; }
+function isOff(n){ return !!n && offList().includes(n); }
 /** 이름 비교용 열쇠 — 앞뒤·연속 공백과 대소문자를 무시 (같은 이름 막기) */
 function titleKeyOf(t){ return String(t || "").replace(/\s+/g, " ").trim().toLowerCase(); }
 function newPerson(name, extra){
@@ -386,6 +404,7 @@ async function doAct(p){
     if (p.dates   !== undefined) up.dates   = cleanDates(p.dates);
     if (p.windows !== undefined) up.windows = parseWindows(p.windows);
     if (p.picks   !== undefined) up.picks   = parsePicks(p.picks);
+    if (p.off     !== undefined) up.off     = cleanOff(p.off);            // 이 시간표에서 뺀 사람들
     await meetRef(id).update(up);
     return buildST();
   }
@@ -543,7 +562,7 @@ async function act(params, okMsg, applyLocal){
   }
 }
 function absorb(){
-  if (me && !members().includes(me)) members().push(me);   // 아직 서버에 안 닿은 내 이름은 유지
+  if (me && !isOff(me) && !members().includes(me)) members().push(me);   // 아직 서버에 안 닿은 내 이름은 유지 (뺀 사람은 제외)
   loadMine(); renderAll();
   if (!$("#heatModal").hidden) renderResult();             // 열려 있는 결과 창도 같이 갱신
   snapSave();
@@ -735,7 +754,7 @@ function renderCalView(){
     const b = document.createElement("button"); b.type = "button"; b.dataset.d = d;
     b.innerHTML = '<span class="n"></span><span class="mk"></span><span class="tx"></span>';
     b.querySelector(".n").textContent = label;
-    const m = me ? markOf(d, myHours(d), myAnswered(d), true) : { cls:"none", mk:"–", tx:"", lb:"" };
+    const m = (me && !isOff(me)) ? markOf(d, myHours(d), myAnswered(d), true) : { cls: isOff(me) ? "na" : "none", mk:"–", tx:"", lb:"" };
     b.className = "d cand s-" + m.cls + (d === today ? " today" : "") + (isFixedDay(d) ? " fixday" : "") + (d < today ? " past" : "");
     b.querySelector(".mk").textContent = m.mk;
     /* 정한 날은 날짜 앞 📌 + 맨 아래 정한 시간 (표의 날짜 머리와 같은 내용) */
@@ -814,7 +833,11 @@ function drawSheet(){
   const hint = $("#sheetHint");
   hint.className = "callout";
   hint.innerHTML = "";
-  if (!me){
+  if (me && isOff(me)){
+    hint.append(document.createTextNode(me + " 님은 이 시간표에 "));
+    const bo = document.createElement("b"); bo.textContent = "참여하지 않아요";
+    hint.append(bo, document.createTextNode(" — 입력할 칸이 없습니다. (⚙ 설정 → 참여 멤버에서 켤 수 있어요)"));
+  } else if (!me){
     hint.append(document.createTextNode("먼저 위에서 "));
     const b0 = document.createElement("b"); b0.textContent = "이름";
     hint.append(b0, document.createTextNode("을 고르면 내 줄이 생깁니다."));
@@ -877,7 +900,7 @@ function drawSheet(){
   thead.appendChild(hr); t.appendChild(thead);
 
   const tb = document.createElement("tbody");
-  const order = me ? [me].concat(members().filter(n => n !== me)) : members().slice();
+  const order = (me && !isOff(me)) ? [me].concat(members().filter(n => n !== me)) : members().slice();
   order.forEach(n => {
     const tr = document.createElement("tr");
     const mine = (n === me);
@@ -1067,6 +1090,7 @@ function renderDmHours(){
   $("#dmMulti").textContent = dmMulti ? "↩ 한 구간으로 넣기" : "＋ 여러 구간 넣기";
 }
 function openDay(d, mode){
+  if (mode !== "set" && isOff(me)){ setStatus(me + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정 → 참여 멤버에서 켤 수 있어요"); return; }
   dmDate = d;
   dmMode = (mode === "set") ? "set" : "edit";
   dmSetOpen = false;
