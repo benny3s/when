@@ -58,7 +58,6 @@ const SCHED_HTML = {
     <div class="spread">
       <h2 style="margin:0" id="dmTitle"></h2>
       <span class="row tight" style="flex:0 0 auto">
-        <button class="iconbtn" id="dmSetBtn" type="button" title="이 날 시간대 바꾸기" aria-label="이 날 설정">⚙</button>
         <button class="iconbtn" id="dmClose" type="button" title="닫기" aria-label="닫기">✕</button>
       </span>
     </div>
@@ -73,6 +72,7 @@ const SCHED_HTML = {
         <button class="ox o" id="dmO" type="button" aria-pressed="false"><span class="mk">○</span><span>돼요</span></button>
         <button class="ox t" id="dmT" type="button" aria-pressed="false"><span class="mk">△</span><span>일부만</span></button>
         <button class="ox x" id="dmX" type="button" aria-pressed="false"><span class="mk">✕</span><span>안 돼요</span></button>
+        <button class="ox n" id="dmN" type="button" aria-pressed="false"><span class="mk">–</span><span>미정</span></button>
       </div>
       <div id="dmMore" hidden>
         <div id="dmHoursBox">
@@ -83,7 +83,6 @@ const SCHED_HTML = {
         <input type="text" id="dmInput" maxlength="200" placeholder="이유 (선택)" aria-label="이유 (선택)">
         <button class="btn primary wide" id="dmSave" type="button">저장</button>
       </div>
-      <button class="dm-clear" id="dmClear" type="button" hidden>미정으로 되돌리기</button>
     </div>
     <div class="dm-set" id="dmSet" hidden>
       <div class="dm-admin">
@@ -1013,7 +1012,7 @@ function renderDm(){
   $("#dmMore").hidden     = !(show === "t" || show === "x");
   $("#dmHoursBox").hidden = show !== "t";
   $("#dmInput").placeholder = show === "x" ? "이유 (선택) — 예: 출장이에요" : "이유 (선택) — 예: 21시 넘어야 도착해요";
-  $("#dmClear").hidden = !mk;
+  $("#dmN").setAttribute("aria-pressed", String(show === ""));
   if (show === "t") renderDmHours();
 }
 function renderDmHours(){
@@ -1460,11 +1459,7 @@ $("#whoRename").onclick = () => {
 };
 
 $("#dmClose").onclick   = () => closeDay();
-$("#dmSetBtn").onclick = () => {
-  if (dmMode === "set") return;
-  dmSetOpen = !dmSetOpen; renderDm();
-  if (dmSetOpen) $("#dmSet").scrollIntoView({ behavior:"smooth", block:"nearest" });
-};
+/* 내 입력 창의 ⚙(이 날 설정)은 뺐다 — 날짜 머리를 누르면 같은 설정이 열린다 (2026-09-30 Benny: "중복 기능") */
 /** 이름 없이 입력하려 할 때 — 창을 닫고 '누구세요' 를 펼친다 */
 function askName(){
   closeDay(); whoOpen = true; whoAdd = false; renderWho();
@@ -1490,7 +1485,8 @@ $("#dmX").onclick = () => {
   dmPart = false; renderDm(); paintSheet(); touch();
   /* 키보드는 띄우지 않는다 — 이유는 적고 싶을 때만 칸을 누른다 (2026-09-28 Benny: "자동 키보드 불편해") */
 };
-$("#dmClear").onclick = () => {
+/* 미정 — 네 번째 선택지 (2026-09-30 Benny: "선택지는 4개니까 O, 세모, X, 미정"). 답을 지우고 닫는다 */
+$("#dmN").onclick = () => {
   const d = dmDate; if (!d) return;
   hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.delete(d);
   delete noteDraft[d]; $("#dmInput").value = "";

@@ -189,8 +189,8 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 .tbar .tb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .tbar .tb.x{background:rgba(180,71,47,.10);border-color:rgba(180,71,47,.22);color:var(--warn);font-size:18px}
 .tbar .tb::before,.tbar .tb.last::after{content:none}
-/* 그 날 창 — ○ △ ✕ 세 개만 (2026-09-28 Benny: "버튼 누르는 횟수를 최소화") */
-.oxpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 0}
+/* 그 날 창 — ○ △ ✕ 미정 네 개 (2026-09-28 Benny: "버튼 누르는 횟수를 최소화" · 2026-09-30 미정 추가) */
+.oxpick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:4px 0 0}
 .ox{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   height:84px;border-radius:16px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;
   font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);touch-action:manipulation;padding:0}
@@ -201,6 +201,8 @@ table.sheet td.on .hr,table.sheet td.on .mm{color:var(--on-accent);opacity:1}
 .ox.o[aria-pressed="true"] .mk{color:var(--on-accent)}
 .ox.t[aria-pressed="true"]{background:rgba(138,109,31,.12);border-color:var(--amber)}
 .ox.x[aria-pressed="true"]{background:rgba(180,71,47,.10);border-color:var(--warn)}
+.ox.n .mk{color:var(--muted)}
+.ox.n[aria-pressed="true"]{background:var(--soft);border-color:var(--muted)}
 #dmMore{margin-top:14px;display:flex;flex-direction:column;gap:10px}
 #dmMore .btn.wide{height:52px;font-size:15.5px}
 .dm-hint{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
