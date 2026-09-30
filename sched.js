@@ -989,6 +989,7 @@ let dmSetOpen = false;      // ⚙ 로 설정을 펼쳤나
    여러 시간은 다중시간 입력 버튼을 조그맣게"). dmMulti = 한 칸씩 켜고 끄는 예전 방식 */
 let dmMulti = false;
 let dmFrom = null;          // 시작을 눌러 두고 끝을 기다리는 중
+let dmNOpen = false;        // 미정을 눌러 이유 칸을 펼친 상태
 /** 내 이 날 답 — "o" 다 돼요 / "t" 일부만 / "x" 안 돼요 / "" 미정 */
 function dmMark(d){
   if (noneSel.has(d)) return "x";
@@ -1009,9 +1010,13 @@ function renderDm(){
   $("#dmO").setAttribute("aria-pressed", String(show === "o"));
   $("#dmT").setAttribute("aria-pressed", String(show === "t"));
   $("#dmX").setAttribute("aria-pressed", String(show === "x"));
-  $("#dmMore").hidden     = !(show === "t" || show === "x");
+  /* 이유 칸 — ○ 만 빼고 △ ✕ 미정 에 보인다 (2026-09-30 Benny: "미정에도 이유가 있을 수 있지").
+     미정은 이미 이유가 있거나 미정을 눌렀을 때만 펼친다 (처음 여는 빈 날엔 버튼 네 개만) */
+  $("#dmMore").hidden     = !(show === "t" || show === "x" || (show === "" && (dmNOpen || !!noteDraft[d])));
   $("#dmHoursBox").hidden = show !== "t";
-  $("#dmInput").placeholder = show === "x" ? "이유 (선택) — 예: 출장이에요" : "이유 (선택) — 예: 21시 넘어야 도착해요";
+  $("#dmInput").placeholder = show === "x" ? "이유 (선택) — 예: 출장이에요"
+                            : show === "" ? "이유 (선택) — 예: 아직 일정 확인 중이에요"
+                            : "이유 (선택) — 예: 21시 넘어야 도착해요";
   $("#dmN").setAttribute("aria-pressed", String(show === ""));
   if (show === "t") renderDmHours();
 }
@@ -1056,6 +1061,7 @@ function openDay(d, mode){
   dmDate = d;
   dmMode = (mode === "set") ? "set" : "edit";
   dmSetOpen = false;
+  dmNOpen = false;
   dmPart = dmMark(d) === "t";                    // 이미 △ 면 시간 버튼을 펼쳐서 연다
   dmFrom = null;
   dmMulti = runsOf(myHours(d)).indexOf(",") >= 0; // 이미 여러 구간이면 그 방식으로 연다
@@ -1476,22 +1482,21 @@ $("#dmO").onclick = () => {
   closeDay();
 };
 /* △ — 시간 버튼 + 이유를 펼친다. 버튼을 누르기 전까지 원래 답은 그대로 둔다(닫아도 안 날아가게) */
-$("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; dmFrom = null; renderDm(); };
+$("#dmT").onclick = () => { if (!dmDate) return; dmPart = true; dmNOpen = false; dmFrom = null; renderDm(); };
 $("#dmMulti").onclick = () => { dmMulti = !dmMulti; dmFrom = null; renderDmHours(); };
 /* ✕ — 바로 '안 돼요' 로 찍는다. 이유 없이 닫아도 저장된다 */
 $("#dmX").onclick = () => {
   const d = dmDate; if (!d) return;
   hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d);
-  dmPart = false; renderDm(); paintSheet(); touch();
+  dmPart = false; dmNOpen = false; renderDm(); paintSheet(); touch();
   /* 키보드는 띄우지 않는다 — 이유는 적고 싶을 때만 칸을 누른다 (2026-09-28 Benny: "자동 키보드 불편해") */
 };
-/* 미정 — 네 번째 선택지 (2026-09-30 Benny: "선택지는 4개니까 O, 세모, X, 미정"). 답을 지우고 닫는다 */
+/* 미정 — 네 번째 선택지 (2026-09-30 Benny: "선택지는 4개니까 O, 세모, X, 미정") */
 $("#dmN").onclick = () => {
   const d = dmDate; if (!d) return;
+  /* 답은 지우고 이유 칸을 펼친다 — ✕ 처럼 이유 없이 닫아도 저장된다. 적어 둔 이유는 그대로 둔다 */
   hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.delete(d);
-  delete noteDraft[d]; $("#dmInput").value = "";
-  dmPart = false; paintSheet(); touch();
-  closeDay();
+  dmPart = false; dmNOpen = true; renderDm(); paintSheet(); touch();
 };
 /* ⚠️ 한글 조합 중 Enter 는 건너뛴다 (마지막 글자가 잘리는 걸 막는다) */
 $("#dmInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#dmSave").click(); } });
