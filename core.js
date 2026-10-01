@@ -128,6 +128,19 @@ function parseWindows(raw){
   }
   return out;
 }
+/** 요일별 시간대 {"0":[9,15], "6":[9,22]} — 일=0 … 토=6 (2026-10-01 Benny: "애쉬만루트 토 9~22시, 일 9~15시") */
+function parseDowWin(raw){
+  let o; try { o = typeof raw === "string" ? JSON.parse(raw || "{}") : (raw || {}); } catch(e){ return {}; }
+  const out = {};
+  if (!o || typeof o !== "object") return out;
+  for (const k in o){
+    if (!/^[0-6]$/.test(k)) continue;
+    const w = o[k]; if (!w || w.length !== 2) continue;
+    const a = clampHour(w[0], -1), b = clampHour(w[1], -1);
+    if (a >= 0 && b > a) out[k] = [a, b];
+  }
+  return out;
+}
 function parsePicks(raw){
   let list = [];
   if (Array.isArray(raw)) list = raw;

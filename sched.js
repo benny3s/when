@@ -161,8 +161,10 @@ const SCHED_HTML = {
     </div>
     <p class="hint" style="margin-top:6px">요일 버튼 = 이 달의 그 요일을 한꺼번에 넣고 빼기</p>
     <div class="chips" id="dateChips" style="margin-top:12px"></div>
-    <div class="fld" id="calHourFld" style="margin-top:16px"><span>기본 시간대 — 모든 날짜에 적용</span>
-      <div class="hourrow">
+    <div class="fld" id="calHourFld" style="margin-top:16px"><span>시간대 — 요일마다 (눌러서 시작·끝)</span>
+      <!-- 고른 날짜에 있는 요일만 한 줄씩 (2026-10-01 Benny: "요일별로 시간을 다르게, 버튼 최소화") -->
+      <div id="dowHours"></div>
+      <div class="hourrow" id="calHourDef" hidden>
         <button class="hourbtn" id="c_hs" type="button" data-h="18">18시</button>
         <span class="hint" style="margin:0">~</span>
         <button class="hourbtn" id="c_he" type="button" data-h="23">23시</button>
@@ -295,6 +297,7 @@ function buildST(){
   if (out.hourEnd <= out.hourStart){ out.hourStart = 10; out.hourEnd = 22; }
   out.dates   = cleanDates(m.dates || []);
   out.windows = parseWindows(m.windows || {});
+  out.dowWin  = parseDowWin(m.dowWin || {});
   out.picks   = parsePicks(m.picks || []);
   const ms = t => (t && t.toMillis) ? t.toMillis() : Infinity;
   (live.people || []).slice().sort((a, b) => ms(a.added) - ms(b.added)).forEach(p => {
@@ -451,6 +454,7 @@ async function doAct(p){
     }
     if (p.dates   !== undefined) up.dates   = cleanDates(p.dates);
     if (p.windows !== undefined) up.windows = parseWindows(p.windows);
+    if (p.dowWin  !== undefined) up.dowWin  = parseDowWin(p.dowWin);    // 요일별 시간대 (2026-10-01)
     if (p.picks   !== undefined) up.picks   = parsePicks(p.picks);
     if (p.off     !== undefined) up.off     = cleanOff(p.off);            // 이 시간표에서 뺀 사람들
     await meetRef(id).update(up);
@@ -537,8 +541,14 @@ function dates(){ return ST.dates || []; }
 function hoursOf(){ return ST.hours || {}; }
 function notesOf(){ return ST.notes || {}; }
 function editedOf(){ return ST.edited || {}; }
+/** 그 날 시간대 = 그 날 따로 정한 것 → 그 요일 시간 → 기본 */
 function winOf(d){
   const w = (ST.windows || {})[d];
+  return (w && w.length === 2 && w[1] > w[0]) ? [w[0], w[1]] : baseWin(d);
+}
+/** 그 날 따로 정한 게 없을 때의 시간대 — 요일별 시간(dowWin)이 있으면 그것 */
+function baseWin(d){
+  const w = (ST.dowWin || {})[String(dObj(d).getDay())];
   return (w && w.length === 2 && w[1] > w[0]) ? [w[0], w[1]] : [ST.hourStart, ST.hourEnd];
 }
 function hoursFor(d){ const [a,b] = winOf(d), r = []; for (let h = a; h < b; h++) r.push(h); return r; }
@@ -963,7 +973,7 @@ function drawSheet(){
     const win = th.querySelector(".win");
     /* 정하지 않은 날의 시간대는 **기본과 다를 때만** 회색으로 — 초록 '9–22' 가 정한 시간처럼 보였다
        (2026-10-01 Benny: "동그라미 친 부분이 헷갈리게 만들어"). 기본 시간대는 칸을 누르면 창 제목에 나온다 */
-    const [wa, wb] = winOf(d), isDefWin = wa === ST.hourStart && wb === ST.hourEnd;
+    const [wa, wb] = winOf(d), [ba, bb] = baseWin(d), isDefWin = wa === ba && wb === bb;   // 요일 시간과 같으면 안 쓴다
     /* 정한 것마다 한 줄 — '17–20 합주' (코멘트는 선택 · 2026-10-01 Benny) */
     if (ft.length){
       win.classList.add("fixt");
@@ -1417,7 +1427,8 @@ function renderDmAdmin(d){
     const x = hourVal(s1), y = hourVal(s2);
     if (y <= x){ setStatus("끝 시간이 시작보다 늦어야 해요", "err"); return; }
     const w = Object.assign({}, ST.windows || {});
-    if (x === ST.hourStart && y === ST.hourEnd) delete w[d]; else w[d] = [x, y];
+    const [ba, bb] = baseWin(d);
+    if (x === ba && y === bb) delete w[d]; else w[d] = [x, y];
     act({ action:"meet_set", windows: JSON.stringify(w) }, fmtFull(d) + " 시간대 " + x + "–" + y + "시",
         () => { ST.windows = w; });
     renderDmHours();
@@ -1768,6 +1779,37 @@ function renderCal(){
     cal.appendChild(b);
   }
   renderDateChips();
+  renderDowHours();
+}
+/** 날짜 관리 — 고른 날짜에 있는 요일마다 '토  9시 ~ 22시' 한 줄. 누르면 시작·끝 (core.js 범위 고르기)
+    바꾸면 그 요일 날짜 전부가 따른다(그 요일 날짜에 따로 정한 시간대는 지운다) */
+function renderDowHours(){
+  const box = $("#dowHours"); if (!box) return;
+  box.innerHTML = "";
+  const on = !!M;
+  $("#calHourDef").hidden = !on || dsel.size > 0;      // 날짜가 없으면 기본 시간대 하나만
+  if (!on) return;
+  const dows = Array.from(new Set(Array.from(dsel).map(d => dObj(d).getDay()))).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  dows.forEach(dw => {
+    const one = Array.from(dsel).find(d => dObj(d).getDay() === dw);
+    const [a, b] = baseWin(one);
+    const row = document.createElement("div"); row.className = "hourrow dowh-row";
+    const lb = document.createElement("b"); lb.className = "dw" + (dw === 0 ? " sun" : dw === 6 ? " sat" : ""); lb.textContent = DOW[dw];
+    const s1 = mkHourBtn(0, 23, a), s2 = mkHourBtn(1, 24, b);
+    const til = document.createElement("span"); til.className = "hint"; til.style.margin = "0"; til.textContent = "~";
+    bindRange(s1, s2, () => setDowWin(dw, hourVal(s1), hourVal(s2)));
+    row.append(lb, s1, til, s2);
+    box.appendChild(row);
+  });
+}
+function setDowWin(dw, x, y){
+  if (y <= x){ setStatus("끝 시간이 시작보다 늦어야 해요", "err"); return; }
+  const dwn = Object.assign({}, ST.dowWin || {}); dwn[String(dw)] = [x, y];
+  const w = Object.assign({}, ST.windows || {});
+  Object.keys(w).forEach(d => { if (dObj(d).getDay() === dw) delete w[d]; });   // 그 요일은 전부 요일 시간을 따른다
+  act({ action:"meet_set", dowWin: JSON.stringify(dwn), windows: JSON.stringify(w) }, DOW[dw] + "요일 " + x + "–" + y + "시",
+      () => { ST.dowWin = dwn; ST.windows = w; });
+  renderDowHours();
 }
 function renderDateChips(){
   const box = $("#dateChips"); box.innerHTML = "";

@@ -684,3 +684,7 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .prow .pt .psrc{font-weight:600;color:var(--muted);font-size:11px}
 .prow.past{opacity:.55}
 .prow.lock .btn{opacity:.4}
+/* 날짜 관리 — 요일별 시간 한 줄씩 (2026-10-01) */
+.dowh-row{margin-top:6px}
+.dowh-row .dw{display:inline-block;width:26px;font-weight:800}
+.dowh-row .dw.sun{color:var(--warn)} .dowh-row .dw.sat{color:#2f6fb5}
