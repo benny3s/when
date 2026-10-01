@@ -625,7 +625,7 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .modal#dayModal{align-items:flex-start;padding-top:max(12px,9vh)}
 
 /* 표 위 안내 한 줄 + 가이드 버튼 (2026-10-01) */
-.g-row{display:flex;justify-content:flex-start;margin:0 0 10px}
+.g-row{display:flex;justify-content:flex-start;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
 .g-row .g-btn{appearance:none;border:1.5px solid var(--accent);background:rgba(var(--accent-rgb),.08);color:var(--accent);
   font:inherit;font-size:13.5px;font-weight:800;border-radius:999px;padding:7px 14px;cursor:pointer}
 .g-row .g-btn:active{background:rgba(var(--accent-rgb),.18)}
@@ -659,3 +659,8 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .fxrow.lock .fxgo:disabled,.fxrow.lock .btn.x:disabled{opacity:1}
 .fxrow.lock .btn.x{visibility:hidden}
 .dm-fix .fxwarn{color:var(--warn);font-weight:700}
+/* 모두 보기 줄 — 오른쪽 끝에 '📌 일정 확정' (2026-10-01) */
+.seg-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.seg-row .seg{margin-bottom:0}
+.seg-row #segFix{flex:0 0 auto}
+.g-row .g-tip{font-size:12.5px;color:var(--muted)}

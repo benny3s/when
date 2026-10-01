@@ -41,10 +41,14 @@ const SCHED_HTML = {
 
   <!-- 표 -->
   <div class="card" id="sheetCard">
-    <div class="seg" id="viewSeg" role="tablist">
-      <!-- 달력 = 칸을 누르면 내 입력, 표 = 모두의 응답 (2026-10-01 Benny: "'내 입력' 대신 '달력 보기'") -->
-      <button class="segb" id="segCal" type="button" role="tab">📅 달력 보기</button>
-      <button class="segb" id="segTab" type="button" role="tab">👥 모두 보기</button>
+    <div class="seg-row">
+      <div class="seg" id="viewSeg" role="tablist">
+        <!-- 달력 = 칸을 누르면 내 입력, 표 = 모두의 응답 (2026-10-01 Benny: "'내 입력' 대신 '달력 보기'") -->
+        <button class="segb" id="segCal" type="button" role="tab">📅 달력 보기</button>
+        <button class="segb" id="segTab" type="button" role="tab">👥 모두 보기</button>
+      </div>
+      <!-- 결과 창(후보·📌)을 여는 버튼 — 밴드매니저는 '결과 보기' 대신 이걸 쓴다 (2026-10-01 Benny). 기본은 숨김 -->
+      <button class="btn dark sm" id="segFix" type="button" hidden>📌 일정 확정</button>
     </div>
     <p class="hint" id="sheetHint" style="margin:0 0 10px"></p>
     <div id="calView" hidden>
@@ -922,6 +926,9 @@ function drawSheet(){
     const gb = document.createElement("button"); gb.type = "button"; gb.className = "g-btn"; gb.textContent = "📝 입력 가이드";
     gb.onclick = () => openModal("guideModal");
     hint.append(gb);
+    /* 날짜 머리를 누르면 그 날 보기·📌 정하기 — 알려 줘야 안다 (2026-10-01 Benny) */
+    const tip = document.createElement("span"); tip.className = "g-tip"; tip.textContent = "날짜를 누르면 그 날 📌 정하기";
+    hint.append(tip);
   }
 
   /* ⚠️ 입력 표에는 '제일 많음' 추천을 **넣지 않는다**
@@ -1594,7 +1601,7 @@ function renderResult(){
   if (!ds.length || !hs.length) return;
   g.style.gridTemplateColumns = "58px repeat(" + hs.length + ", minmax(42px, 1fr))";
   g.appendChild(cell("gc hh corner", ""));
-  hs.forEach(h => g.appendChild(cell("gc hh", String(h))));
+  hs.forEach(h => g.appendChild(cell("gc hh", h + "시")));          // '시' 를 붙여 칸의 숫자(사람 수)와 헷갈리지 않게
   ds.forEach(d => {
     const mine = pickHours(d), win = hoursFor(d);
     const dayFull = win.length && win.every(h => mine.has(h));
@@ -1761,6 +1768,7 @@ MODAL_CLOSE.dayModal = fromBack => closeDay(fromBack);     // 그 날 창은 닫
 $("#calOpenBtn").onclick  = () => openModal("calModal");
 $("#segCal").onclick = () => setView("cal");
 $("#segTab").onclick = () => setView("tab");
+$("#segFix").onclick = () => openModal("heatModal");
 
 $("#whoGo").onclick    = () => { if (whoRen) renameMe($("#whoInput").value); else pickMe($("#whoInput").value); };
 /* ⚠️ 한글 조합 중 keydown 의 key 는 'Process'/keyCode 229 → keyup 도 같이 본다 */
