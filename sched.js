@@ -53,7 +53,23 @@ const SCHED_HTML = {
     </div>
     <div class="grid-wrap" id="tabView"><table class="sheet" id="sheet"></table></div>
   </div>`,
-  modals: `<!-- ══════════ 그 날 창 ══════════ -->
+  modals: `<!-- ══════════ 가이드 — 넣는 방법 (2026-10-01: 표 위 안내를 팝업으로) ══════════ -->
+<div class="modal" id="guideModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <div class="spread">
+      <h2 style="margin:0" id="guideTitle">📝 이렇게 넣어주세요</h2>
+      <button class="iconbtn" data-close type="button" title="닫기" aria-label="닫기">✕</button>
+    </div>
+    <ol class="guide">
+      <li>위 <b>누구세요?</b>에서 <b>내 이름</b>을 누르기</li>
+      <li><b>점선 칸</b>(아직 안 넣은 날)을 누르기</li>
+      <li><b>○ 돼요 · △ 일부만 · ✕ 안 돼요 · – 미정</b> 중 하나 고르기 <span class="g-s">(△ 는 되는 시간을 몰라도 돼요)</span></li>
+      <li>창을 닫으면 <b>자동 저장</b></li>
+    </ol>
+    <p class="hint" style="margin:10px 0 0">표의 날짜 머리를 누르면 그 날 누가 되는지 보고 📌 정할 수 있어요.</p>
+  </div>
+</div>
+<!-- ══════════ 그 날 창 ══════════ -->
 <div class="modal" id="dayModal" hidden>
   <div class="sheet" role="dialog" aria-modal="true">
     <div class="spread">
@@ -88,10 +104,15 @@ const SCHED_HTML = {
     <div class="dm-set" id="dmSet" hidden>
       <!-- 그날 요약 — 몇 명 되는지 · 시간별 인원 · 사람별 (2026-10-01 Benny: "헤더 날짜를 누르면 결과보기처럼 의미 있는 데이터") -->
       <div id="dmDay"></div>
-      <div class="dm-hap" id="dmFixRow">
-        <span id="dmFixNow"></span>
-        <button class="btn" id="dmFix" type="button">📌 이 날로 정하기</button>
+      <!-- 📌 정하기 — 막대에서 시작·끝을 누르고, 코멘트는 선택 (2026-10-01 Benny: "17-20 합주 / 20-22 청모") -->
+      <div class="dm-fix" id="dmFixBox">
+        <div id="dmFixList"></div>
+        <div class="dm-fixadd">
+          <input type="text" id="dmFixNote" maxlength="30" placeholder="코멘트 (선택) — 예: 합주" aria-label="코멘트 (선택)">
+          <button class="btn dark" id="dmFix" type="button">📌 정하기</button>
+        </div>
       </div>
+      <div id="dmPeople"></div>
       <details class="dm-more">
         <summary>⚙ 시간대 바꾸기 · 후보에서 빼기</summary>
         <div class="dm-admin" style="margin-top:8px">
@@ -260,7 +281,7 @@ function buildST(){
   const m = live.meet;
   if (!m){ if (live.meetState === "gone") out.gone = true; return out; }
   out.meet = { id: live.id, title: m.title || "", place: m.place || "", memo: m.memo || "",
-               fixed: m.fixed || "", owner: m.owner || "", made: m.made || "",
+               fixed: m.fixed || "", fixNotes: cleanFixNotes(m.fixNotes), owner: m.owner || "", made: m.made || "",
                off: cleanOff(m.off) };
   out.hourStart = clampHour(m.hourStart, 10);
   out.hourEnd   = clampHour(m.hourEnd, 22);
@@ -298,6 +319,19 @@ function cleanOff(v){
   if (!Array.isArray(a)) return [];
   return Array.from(new Set(a.map(x => String(x || "").trim().slice(0, 30)).filter(Boolean))).slice(0, 50);
 }
+/** 📌 정한 것마다 붙이는 짧은 코멘트 {"2026-10-11 17:00~20:00": "합주"} — JSON 이 와도 된다 (2026-10-01) */
+function cleanFixNotes(v){
+  let o = v;
+  if (typeof o === "string"){ try { o = JSON.parse(o); } catch(e){ o = {}; } }
+  const out = {};
+  if (!o || typeof o !== "object" || Array.isArray(o)) return out;
+  Object.keys(o).sort().forEach(k => {
+    const t = String(o[k] == null ? "" : o[k]).replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
+    if (t && /^\d{4}-\d{2}-\d{2}/.test(k) && k.length <= 40 && Object.keys(out).length < 20) out[k] = t;
+  });
+  return out;
+}
+const FIXNOTE_MAX = 30;
 function offList(){ return (meet() && meet().off) || []; }
 function isOff(n){ return !!n && offList().includes(n); }
 /** 이름 비교용 열쇠 — 앞뒤·연속 공백과 대소문자를 무시 (같은 이름 막기) */
@@ -401,6 +435,7 @@ async function doAct(p){
     if (p.place !== undefined) up.place = String(p.place).slice(0, 60);
     if (p.memo  !== undefined) up.memo  = String(p.memo).slice(0, 200);
     if (p.fixed !== undefined) up.fixed = String(p.fixed).slice(0, 400);    // 여러 개를 ", " 로 (2026-09-28)
+    if (p.fixNotes !== undefined) up.fixNotes = cleanFixNotes(p.fixNotes); // 정한 것마다 코멘트 (2026-10-01)
     if (p.hourStart !== undefined || p.hourEnd !== undefined){
       const hs = clampHour(p.hourStart !== undefined ? p.hourStart : cur.hourStart, 10);
       const he = clampHour(p.hourEnd   !== undefined ? p.hourEnd   : cur.hourEnd, 22);
@@ -738,10 +773,10 @@ function markOf(d, hrs, ans, mine){
       (2026-09-22m Benny: "날짜가 가로로 길어서 보기가 불편한데, 달력 모양으로") ── */
 let sheetView = "tab";
 /* 기본은 **표**. 달력은 원할 때 고른다 (2026-09-22n Benny) */
-function loadView(){ try { sheetView = localStorage.getItem("meet_view") || "tab"; } catch(e){ sheetView = "tab"; } }
+/* 켤 때는 **늘 모두 보기** — 지난번 고른 걸 기억하지 않는다 (2026-10-01 Benny: "화면 딱 켰을 때 모두 보기를 기본") */
+function loadView(){ sheetView = "tab"; }
 function setView(v){
   sheetView = (v === "cal") ? "cal" : "tab";
-  try { localStorage.setItem("meet_view", sheetView); } catch(e){}
   renderSheetArea();
 }
 function renderSheetArea(){
@@ -788,7 +823,7 @@ function renderCalView(){
       fx.textContent = ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "");
       b.appendChild(fx);
     }
-    b.title = fmtFull(d) + " · " + (ft.length ? "📌 " + ft.join(", ") : winLabel(d));
+    b.title = fmtFull(d) + " · " + (ft.length ? "📌 " + fixedLabels(d).map(fixLabelTxt).join(", ") : winLabel(d));
     b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
     return b;
   };
@@ -797,40 +832,32 @@ function renderCalView(){
     t.setAttribute("role", "button"); t.tabIndex = 0;
     t.onclick = () => { pastOpen = !pastOpen; paintSheet(); };
   }
-  /* 한 주 7칸 중 절반 미만만 후보면(주말만·매주 일요일 등) 빈칸투성이라 타일이 낫다.
-     매일처럼 빽빽할 때만 요일 맞춘 달력 */
-  const weekOf = d => { const o = dObj(d); o.setDate(o.getDate() - o.getDay()); return iso(o); };
-  const weeks = Array.from(new Set(ds.map(weekOf))).sort();
-  const flow = ds.length / (weeks.length * 7) < 0.5;
-  g.classList.toggle("flow", flow);
-  if (flow){
-    /* 타일 — 달마다 제목 + 후보 날짜만 (날짜 옆에 요일) */
-    let mon = "";
-    ds.forEach(d => {
-      const mn = monthName(d);
-      if (mn !== mon){ mon = mn; addHead(mn); }
-      g.appendChild(tile(d, dObj(d).getDate() + " " + fmtDow(d)));
+  /* **진짜 달력** — 달마다 제목 + 요일 줄 + 7칸 주, 달을 세로로 이어 붙인다 (빈 주도 건너뛰지 않는다)
+     (2026-10-01 Benny: "내 입력은 캘린더 모양으로 보기 편하게 하려던 건데 의도를 벗어났어 — 달력 모양으로 세로로 길게")
+     · 첫 달은 첫 후보가 있는 주부터, 마지막 달은 마지막 후보가 있는 주까지만
+     · 후보가 아닌 날은 흐린 숫자, 다른 달 날짜는 빈칸 */
+  g.classList.remove("flow");
+  const first = dObj(ds[0]), last = dObj(ds[ds.length - 1]);
+  const lastKey = last.getFullYear() * 12 + last.getMonth();
+  for (let y = first.getFullYear(), m = first.getMonth(); y * 12 + m <= lastKey; m === 11 ? (y++, m = 0) : m++){
+    addHead(monthName(iso(new Date(y, m, 1))));
+    DOW.forEach((w, i) => {
+      const x = document.createElement("div"); x.className = "dowh" + (i === 0 ? " sun" : i === 6 ? " sat" : ""); x.textContent = w; g.appendChild(x);
     });
-    return;
-  }
-  /* 요일 맞춘 달력 — 후보가 있는 주만, 달이 바뀌면 제목 줄 */
-  DOW.forEach((w, i) => {
-    const x = document.createElement("div"); x.className = "dowh" + (i === 0 ? " sun" : ""); x.textContent = w; g.appendChild(x);
-  });
-  let mon = "";
-  weeks.forEach(ws => {
-    const firstCand = ds.find(d => weekOf(d) === ws);
-    const mn = monthName(firstCand);
-    if (mn !== mon){ mon = mn; addHead(mn); }
-    for (let i = 0; i < 7; i++){
-      const o = dObj(ws); o.setDate(o.getDate() + i);
-      const d = iso(o);
-      if (set.has(d)){ g.appendChild(tile(d, String(o.getDate()))); continue; }
-      const b = document.createElement("div"); b.className = "d off";
-      b.innerHTML = '<span class="n"></span>'; b.querySelector(".n").textContent = o.getDate();
-      g.appendChild(b);
+    /* 이 달에서 그릴 범위 — 그 주의 일요일 ~ 토요일까지 (다른 달 날짜는 빈칸) */
+    const a = (y === first.getFullYear() && m === first.getMonth()) ? new Date(first) : new Date(y, m, 1);
+    const z = (y * 12 + m === lastKey) ? new Date(last) : new Date(y, m + 1, 0);
+    const o = new Date(a); o.setDate(o.getDate() - o.getDay());
+    const end = new Date(z); end.setDate(end.getDate() + (6 - end.getDay()));
+    for (; o <= end; o.setDate(o.getDate() + 1)){
+      if (o.getMonth() !== m){ const e = document.createElement("div"); e.className = "d blank"; g.appendChild(e); continue; }
+      const d = iso(o), n = o.getDate();
+      if (set.has(d)){ g.appendChild(tile(d, String(n))); continue; }
+      const x = document.createElement("div"); x.className = "d off" + (o.getDay() === 0 ? " sun" : "");
+      x.innerHTML = '<span class="n"></span>'; x.querySelector(".n").textContent = n;
+      g.appendChild(x);
     }
-  });
+  }
 }
 
 /** 표와 달력을 **같이** 다시 그린다.
@@ -861,27 +888,20 @@ function drawSheet(){
     const bo = document.createElement("b"); bo.textContent = "참여하지 않아요";
     hint.append(bo, document.createTextNode(" — 입력할 칸이 없습니다. (⚙ 설정 → 멤버에서 켤 수 있어요)"));
   } else {
-    /* 안내 = 할 일 순서 (2026-10-01 Benny: "사람들이 뭘 해야 할지 모르겠대 — 지침으로") */
+    /* 안내는 **한 줄** — 남은 날만. 넣는 방법은 '가이드' 를 눌러야 팝업으로
+       (2026-10-01 Benny: "정보가 여전히 많아 — '이렇게 넣어주세요' 를 가이드로 심플하게, 누르면 팝업") */
     const todo = me ? (ahead.length ? ahead : ds).filter(d => !myAnswered(d)) : [];   // 지난 날은 안 채워도 된다
-    if (me && !todo.length){
-      hint.classList.add("done");
-      hint.innerHTML = "<b>✅ 다 넣었어요!</b> 칸을 다시 누르면 언제든 고칠 수 있어요.";
-    } else {
-      const ol = document.createElement("ol"); ol.className = "guide";
-      const li = html => { const x = document.createElement("li"); x.innerHTML = html; ol.appendChild(x); };
-      const t = document.createElement("b"); t.textContent = "📝 이렇게 넣어주세요";
-      hint.appendChild(t);
-      li(me ? "<s>위 <b>누구세요?</b>에서 내 이름 고르기</s> ✓" : "위 <b>누구세요?</b>에서 <b>내 이름</b>을 누르기");
-      li("<b>점선 칸</b>(아직 안 넣은 날)을 누르기");
-      li("<b>○ 돼요 · △ 일부만 · ✕ 안 돼요 · – 미정</b> 중 하나 고르기 <span class=\"g-s\">(△ 는 되는 시간을 몰라도 돼요)</span>");
-      li("창을 닫으면 <b>자동 저장</b>");
-      hint.appendChild(ol);
-      if (me){
-        const p = document.createElement("p"); p.className = "g-left";
-        p.textContent = "남은 날 " + todo.length + "일 — " + todo.slice(0, 4).map(fmtD).join(", ") + (todo.length > 4 ? " …" : "");
-        hint.appendChild(p);
-      }
+    hint.classList.add("one");
+    const msg = document.createElement("span"); msg.className = "g-msg";
+    if (!me) msg.innerHTML = "위 <b>누구세요?</b>에서 내 이름을 먼저 골라주세요";
+    else if (!todo.length){ hint.classList.add("done"); msg.innerHTML = "<b>✅ 다 넣었어요!</b> 칸을 누르면 고칠 수 있어요"; }
+    else {
+      const b = document.createElement("b"); b.textContent = "남은 날 " + todo.length + "일";
+      msg.append(b, " — " + todo.slice(0, 3).map(fmtD).join(", ") + (todo.length > 3 ? " …" : ""));
     }
+    const gb = document.createElement("button"); gb.type = "button"; gb.className = "g-btn"; gb.textContent = "📝 가이드";
+    gb.onclick = () => openModal("guideModal");
+    hint.append(msg, gb);
   }
 
   /* ⚠️ 입력 표에는 '제일 많음' 추천을 **넣지 않는다**
@@ -911,15 +931,22 @@ function drawSheet(){
     th.querySelector(".dd").textContent = (fixed ? "📌" : "") + fmtD(d);
     th.querySelector(".dw").textContent = fmtDow(d);
     /* 정한 날은 시간대 대신 정한 시간 (2026-09-29 Benny: "약속 시간보다 넓게 잡으면 확정돼도 시간이 안 보인다") */
-    const ft = fixed ? fixedTimes(d) : [];
+    const ft = fixed ? fixedLabels(d) : [];
     const win = th.querySelector(".win");
     /* 정하지 않은 날의 시간대는 **기본과 다를 때만** 회색으로 — 초록 '9–22' 가 정한 시간처럼 보였다
        (2026-10-01 Benny: "동그라미 친 부분이 헷갈리게 만들어"). 기본 시간대는 칸을 누르면 창 제목에 나온다 */
     const [wa, wb] = winOf(d), isDefWin = wa === ST.hourStart && wb === ST.hourEnd;
-    win.textContent = ft.length ? ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "") : (isDefWin ? "" : wa + "–" + wb);
-    if (!ft.length) win.classList.add("plain");
-    if (ft.length) win.classList.add("fixt");
-    th.title = (ft.length ? "📌 " + ft.join(", ") + " 로 정함 (이 날 시간대 " + winLabel(d) + ") · " : "") + "눌러서 이 날 시간대 바꾸기 · 후보에서 빼기";
+    /* 정한 것마다 한 줄 — '17–20 합주' (코멘트는 선택 · 2026-10-01 Benny) */
+    if (ft.length){
+      win.classList.add("fixt");
+      ft.forEach(x => {
+        const ln = document.createElement("span"); ln.className = "fxl";
+        const tm = document.createElement("b"); tm.textContent = x.time; ln.appendChild(tm);
+        if (x.note) ln.append(" " + x.note);
+        win.appendChild(ln);
+      });
+    } else { win.textContent = isDefWin ? "" : wa + "–" + wb; win.classList.add("plain"); }
+    th.title = (ft.length ? "📌 " + ft.map(fixLabelTxt).join(", ") + " (이 날 시간대 " + winLabel(d) + ") · " : "") + "눌러서 이 날 보기 · 📌 정하기";
     th.onclick = () => openDay(d, "set");
     hr.appendChild(th);
   });
@@ -1022,6 +1049,20 @@ function fixedTimes(d){
     .sort((a, b) => a.from - b.from).map(p => p.from + "–" + p.to)
     .filter(t => !seen.has(t) && seen.add(t));
 }
+/** 그 날 정한 것들 — [{t, time:"17–20", note:"합주"}] 시간순. 같은 시간은 하나만 (📌 + 이력 '예정' 이 겹칠 때)
+    (2026-10-01 Benny: "확정 시간 + 코멘트 — 17-20 합주 / 20-22 청모") */
+function fixedLabels(d){
+  const seen = new Set();
+  return shownFixes().map(t => ({ t, p: pickParse(t) })).filter(x => x.p && x.p.d === d)
+    .sort((a, b) => a.p.from - b.p.from || a.p.to - b.p.to)
+    .map(x => ({ t: x.t, time: x.p.from + "–" + x.p.to, note: fixNoteOf(x.t) }))
+    .filter(x => !seen.has(x.time) && seen.add(x.time));
+}
+/** 맨 위 '📌 … 로 정했습니다' 줄 — 코멘트까지 ("10/11(일) 17:00~20:00 합주, …") */
+function fmtFixedNotes(v){
+  return String(v || "").split(/\s*,\s*/).filter(Boolean).map(t => fmtFixed(t) + (fixNoteOf(t) ? " " + fixNoteOf(t) : "")).join(", ");
+}
+function fixLabelTxt(x){ return x.time + (x.note ? " " + x.note : ""); }
 /** "2026-09-21 18:00~20:00" → "9/21(월) 18:00~20:00" (저장 값은 그대로 둔다) */
 function fmtFixed(f){
   /* 여러 개면 ', ' 로 이어져 있다 (2026-09-28) */
@@ -1060,6 +1101,18 @@ function dmMark(d){
   return on.length >= hoursFor(d).length ? "o" : "t";
 }
 /** 날짜 머리 창의 요약 — 누가 되는지, 몇 시에 가장 많이 되는지 */
+let fxA = null, fxZ = null, fxFrom = null;          // 📌 고를 시간 — fxA 칸 ~ fxZ 칸 (끝 시각은 fxZ+1)
+/** 창을 열 때 — 가장 많이 되는 시간(붙어 있는 첫 덩어리)을 미리 골라 둔다. 이미 정한 시간이면 비워 둔다 */
+function fxPreset(d){
+  fxA = fxZ = fxFrom = null;
+  const hs = hoursFor(d); if (!hs.length) return;
+  const cnt = hs.map(h => availAt(d, h).length), best = Math.max.apply(null, cnt);
+  if (!best) return;
+  const i = cnt.indexOf(best); let j = i;
+  while (j + 1 < hs.length && cnt[j + 1] === best && hs[j + 1] === hs[j] + 1) j++;
+  if (fixes().indexOf(pickTxt(d, hs[i], hs[j] + 1)) >= 0) return;
+  fxA = hs[i]; fxZ = hs[j];
+}
 function renderDayInfo(d){
   const box = $("#dmDay"); if (!box) return;
   box.innerHTML = "";
@@ -1078,31 +1131,49 @@ function renderDayInfo(d){
     sum.appendChild(s);
   });
   box.appendChild(sum);
-  /* 시간별 인원 — 진한 칸 = 전원 */
+  /* 시간별 인원 — **막대 높이 = 되는 사람 수**, 아래 눈금 = 시각(칸 경계). 진한 막대 = 전원
+     (2026-10-01 Benny: "시간 바에서 뭐가 시간이고 뭐가 사람수인지 직관적이지가 않아")
+     막대를 누르면 📌 정할 시간을 고른다 — 시작 칸, 끝 칸 (내 입력의 △ 와 같은 방식) */
   if (hs.length && tot){
     const cnt = hs.map(h => availAt(d, h).length), best = Math.max.apply(null, cnt);
+    const cap = document.createElement("div"); cap.className = "dy-cap";
+    const cl = document.createElement("span"); cl.textContent = "시간별 되는 사람 (명)";
+    const cr = document.createElement("span"); cr.className = "dy-best";
+    if (best > 0){
+      const b = document.createElement("b"); b.textContent = runsOf(hs.filter((h, i) => cnt[i] === best), true) + "시";
+      cr.append("최다 ", b, " " + best + "/" + tot + "명" + (best === tot ? " 🎉" : ""));
+    } else cr.textContent = "아직 되는 사람이 없어요";
+    cap.append(cl, cr); box.appendChild(cap);
     const strip = document.createElement("div"); strip.className = "dy-strip";
     hs.forEach((h, i) => {
-      const col = document.createElement("div"); col.className = "dy-h";
       const n = cnt[i];
-      const cellEl = document.createElement("div");
-      cellEl.className = "dy-c" + (n && n === tot ? " full" : "") + (n === 0 ? " z" : "") + (n && n === best && n !== tot ? " best" : "");
-      if (n && n !== tot) cellEl.style.background = "rgba(var(--accent-rgb)," + (0.08 + 0.32 * (n / tot)).toFixed(3) + ")";
-      cellEl.textContent = n ? String(n) : "";
-      cellEl.title = h + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "");
-      const lab = document.createElement("div"); lab.className = "dy-l"; lab.textContent = String(h);
-      col.append(cellEl, lab); strip.appendChild(col);
+      const col = document.createElement("button"); col.type = "button"; col.className = "dy-h";
+      if (fxA !== null && h >= fxA && h <= fxZ) col.classList.add("sel");
+      if (fxFrom === h) col.classList.add("from");
+      const num = document.createElement("span"); num.className = "dy-n"; num.textContent = n ? String(n) : "";
+      const well = document.createElement("span"); well.className = "dy-w";
+      const bar = document.createElement("span");
+      bar.className = "dy-b" + (n && n === tot ? " full" : "");
+      bar.style.height = n ? Math.max(10, Math.round(100 * n / tot)) + "%" : "0";
+      well.appendChild(bar);
+      const lab = document.createElement("span"); lab.className = "dy-l";
+      lab.textContent = h + (i === 0 ? "시" : "");
+      col.append(num, well, lab);
+      if (i === hs.length - 1){ const e = document.createElement("span"); e.className = "dy-l end"; e.textContent = (h + 1) + "시"; col.appendChild(e); }
+      col.title = h + "–" + (h + 1) + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "");
+      col.setAttribute("aria-label", h + "시부터 한 시간 · " + n + "명");
+      col.onclick = () => {
+        if (fxFrom === null){ fxFrom = h; fxA = fxZ = h; }
+        else { fxA = Math.min(fxFrom, h); fxZ = Math.max(fxFrom, h); fxFrom = null; }
+        renderDayInfo(d);
+      };
+      strip.appendChild(col);
     });
-    const bestLine = document.createElement("p"); bestLine.className = "dy-best";
-    if (best > 0){
-      const bh = hs.filter((h, i) => cnt[i] === best);
-      bestLine.innerHTML = "";
-      const b = document.createElement("b"); b.textContent = runsOf(bh, true) + "시";
-      bestLine.append("가장 많이 되는 시간 ", b, " · " + best + " / " + tot + "명" + (best === tot ? " (전원 🎉)" : ""));
-    } else bestLine.textContent = "아직 이 날 되는 사람이 없어요";
-    box.append(bestLine, strip);
+    box.appendChild(strip);
   }
+  renderFixBox(d);
   /* 사람별 — 되는 순서대로. △ 는 시간, ✕ 는 이유 */
+  const pbox = $("#dmPeople"); pbox.innerHTML = "";
   const list = document.createElement("div"); list.className = "dy-list";
   [["all","○ 돼요"],["part","△ 일부만"],["no","✕ 안 돼요"],["none","– 미정"]].forEach(([k, title]) => {
     if (!groups[k].length) return;
@@ -1117,7 +1188,43 @@ function renderDayInfo(d){
     });
     row.append(t, who); list.appendChild(row);
   });
-  box.appendChild(list);
+  pbox.appendChild(list);
+}
+/** 📌 — 그 날 정한 것 목록(코멘트 고치기·취소) + 새로 정하기 */
+function renderFixBox(d){
+  const lb = $("#dmFixList"); lb.innerHTML = "";
+  fixedLabels(d).forEach(x => {
+    const own = fixes().indexOf(x.t) >= 0;           // 이력에만 있는 '예정' 합주는 여기서 못 지운다
+    const r = document.createElement("div"); r.className = "fxrow";
+    const tm = document.createElement("b"); tm.textContent = "📌 " + x.time;
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.maxLength = FIXNOTE_MAX; inp.value = x.note; inp.placeholder = "코멘트 (선택)";
+    inp.setAttribute("aria-label", x.time + " 코멘트");
+    inp.addEventListener("change", () => { setFixNote(x.t, inp.value); renderDm(); });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); inp.blur(); } });
+    r.append(tm, inp);
+    if (own){
+      const del = document.createElement("button"); del.type = "button"; del.className = "btn x"; del.textContent = "✕";
+      del.setAttribute("aria-label", x.time + " 정한 거 취소");
+      del.onclick = () => { setFixes(fixes().filter(f => f !== x.t), fmtFull(d) + " " + x.time + " 정한 거 취소됨"); renderDm(); };
+      r.appendChild(del);
+    } else {
+      const tg = document.createElement("span"); tg.className = "fxtag"; tg.textContent = "이력";
+      tg.title = "합주 이력의 '예정' — 지우려면 이력에서";
+      r.appendChild(tg);
+    }
+    lb.appendChild(r);
+  });
+  const st = document.createElement("p"); st.className = "dm-hint fxst";
+  const btn = $("#dmFix");
+  if (fxFrom !== null){ st.textContent = fxFrom + "시부터 — 끝 시간 막대를 눌러주세요"; btn.disabled = true; }
+  else if (fxA !== null){
+    const t = pickTxt(d, fxA, fxZ + 1), who = pickWho(t).length;
+    const dup = fixes().indexOf(t) >= 0;
+    st.textContent = fxA + "–" + (fxZ + 1) + "시 · " + who + "/" + members().length + "명 내내 가능" + (dup ? " · 이미 정했어요" : "");
+    st.classList.add("ok"); btn.disabled = dup;
+  } else { st.textContent = "위 막대에서 시작·끝을 눌러 시간을 고르세요"; btn.disabled = true; }
+  lb.appendChild(st);
 }
 function renderDm(){
   const d = dmDate; if (!d) return;
@@ -1196,9 +1303,7 @@ function openDay(d, mode){
   $("#dmTitle").textContent = fmtFull(d) + " · " + (ftT.length ? "📌 " + ftT.join(", ") + "시" : winLabel(d));
   $("#dmInput").value = noteDraft[d] || "";
   renderDmAdmin(d);
-  const fx = isFixedDay(d);
-  $("#dmFixNow").textContent = fx ? "📌 " + fmtFixed(fixes().filter(f => f.indexOf(d) === 0).join(", ")) : "";
-  $("#dmFix").textContent = fx ? "정한 거 취소" : "📌 이 날로 정하기";
+  fxPreset(d); $("#dmFixNote").value = "";
   renderDm();
   if ($("#dayModal").hidden) openModal("dayModal");   // 이미 열려 있는 창을 다시 그릴 땐 칸을 더 밀지 않는다
 }
@@ -1370,11 +1475,25 @@ function dropPick(t){
 /* 📌 정한 것 — 여러 개 */
 function fixes(){ return String((meet() && meet().fixed) || "").split(/\s*,\s*/).filter(Boolean); }
 function isFixed(t){ return fixes().indexOf(t) >= 0; }
-function setFixes(list, msg){
+/* 📌 코멘트 — 정한 것마다 (선택). 이력에만 있는 '예정' 합주(extraFixes)에도 달 수 있다 */
+function fixNotes(){ return (meet() && meet().fixNotes) || {}; }
+function fixNoteOf(t){ return fixNotes()[t] || ""; }
+/** notes 를 주면 코멘트도 같이 바꾼다. 없어진 📌 의 코멘트는 버린다 */
+function setFixes(list, msg, notes){
   const v = Array.from(new Set(list)).sort().join(", ");
-  /* 밴드매니저: 📌 정한 게 바뀌면 합주 이력에 '예정' 회차를 만들고 지운다 */
-  if (typeof onFixesChanged === "function"){ try { onFixesChanged(fixes(), v ? v.split(", ") : []); } catch(e){} }
-  act({ action:"meet_set", fixed: v }, msg, () => { if (ST.meet) ST.meet.fixed = v; });
+  const after = v ? v.split(", ") : [];
+  const keep = new Set(after.concat(shownFixes().filter(t => fixes().indexOf(t) < 0)));
+  const src = Object.assign({}, fixNotes(), notes || {}), nn = {};
+  Object.keys(src).forEach(k => { if (keep.has(k) && src[k]) nn[k] = src[k]; });
+  /* 밴드매니저: 📌 정한 게 바뀌면 합주 이력에 '예정' 회차를 만들고 지운다 (+ 코멘트를 이력에) */
+  if (typeof onFixesChanged === "function"){ try { onFixesChanged(fixes(), after, nn); } catch(e){} }
+  act({ action:"meet_set", fixed: v, fixNotes: JSON.stringify(nn) }, msg,
+      () => { if (ST.meet){ ST.meet.fixed = v; ST.meet.fixNotes = nn; } });
+}
+function setFixNote(t, note){
+  note = String(note || "").replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
+  if (note === fixNoteOf(t)) return;
+  setFixes(fixes(), note ? "코멘트 저장됨" : "코멘트 지웠어요", { [t]: note });
 }
 function toggleFix(t){
   const list = fixes(), i = list.indexOf(t);
@@ -1440,7 +1559,7 @@ function renderPicks(){
     const on = fx.indexOf(t) >= 0;
     const row = document.createElement("div"); row.className = "prow" + (on ? " fixed" : "");
     const pt = document.createElement("div"); pt.className = "pt";
-    const tt = document.createElement("b"); tt.textContent = (on ? "📌 " : "") + fmtPick(t);
+    const tt = document.createElement("b"); tt.textContent = (on ? "📌 " : "") + fmtPick(t) + (fixNoteOf(t) ? " · " + fixNoteOf(t) : "");
     const who = pickWho(t);
     const s2 = document.createElement("span"); s2.className = "ps";
     s2.textContent = responders().length ? who.length + " / " + responders().length + "명 내내 가능" + (who.length ? " — " + who.join(", ") : "") : "아직 아무도 입력 안 했어요";
@@ -1637,15 +1756,18 @@ $("#dmN").onclick = () => {
 $("#dmInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#dmSave").click(); } });
 /* 저장 = 닫기. 닫을 때 이유를 옮기고 저장한다 (closeDay) */
 $("#dmSave").onclick = () => closeDay();
+/* 📌 정하기 — 막대에서 고른 시간 + 코멘트(선택). 한 날에 여러 개 (17–20 합주 / 20–22 청모).
+   창은 닫지 않는다 — 이어서 하나 더 정할 수 있게 */
 $("#dmFix").onclick = () => {
-  const d = dmDate; if (!d) return;
-  /* 여러 개 정할 수 있으니 **이 날 것만** 넣고 뺀다 */
-  const rest = fixes().filter(f => f.indexOf(d) !== 0);
-  if (isFixedDay(d)){ setFixes(rest, fmtFull(d) + " 정한 거 취소됨"); closeDay(); return; }
-  const [a, b] = winOf(d);
-  const txt = pickTxt(d, a, b);
-  setFixes(rest.concat([txt]), "📌 " + fmtPick(txt) + " 로 정했습니다"); closeDay();
+  const d = dmDate; if (!d || fxA === null || fxFrom !== null) return;
+  const t = pickTxt(d, fxA, fxZ + 1);
+  if (fixes().indexOf(t) >= 0) return;
+  const note = $("#dmFixNote").value.replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
+  setFixes(fixes().concat([t]), "📌 " + fmtPick(t) + (note ? " " + note : "") + " 로 정했습니다", note ? { [t]: note } : null);
+  $("#dmFixNote").value = ""; fxA = fxZ = null;
+  renderDm();
 };
+$("#dmFixNote").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#dmFix").click(); } });
 $("#dmDrop").onclick = () => {
   const d = dmDate; if (!d) return;
   if (!confirm(fmtFull(d) + " 을 후보에서 뺍니다. 계속할까요?")) return;

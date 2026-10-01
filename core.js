@@ -324,6 +324,10 @@ function openOutside(){
   try { navigator.clipboard.writeText(u); setStatus("주소를 복사했어요 — 사파리에 붙여넣기 해주세요", "ok"); }
   catch(e){ prompt("이 주소를 사파리에 붙여넣어 주세요", u); }
 }
+/* 시스템 공유창은 휴대폰(터치)에서만 — PC 크롬은 창이 뜨다 말아서 바로 복사로 (2026-10-01 Benny) */
+function canNativeShare(){
+  return !!navigator.share && !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
+}
 /* 2026-09-30 Benny: "카카오 브라우저 경고 문구 필요해? 귀찮은 것 같기도 하고 필수가 아니라면" → 끈다.
    카톡 안에서도 기능은 다 된다(느릴 뿐). 되살리려면 IAB_ON = true */
 const IAB_ON = false;

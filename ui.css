@@ -440,7 +440,10 @@ table.sheet tr.me .nmbtn .sub{color:var(--accent);opacity:.8}
 /* 정해진 날 */
 table.sheet th .dow.fix{color:var(--accent);font-weight:700;font-size:10px}
 table.sheet th.dhead.hasFix{background:rgba(var(--accent-rgb),.07)}
-table.sheet th .dow.win.fixt{font-weight:800}
+table.sheet th .dow.win.fixt{font-weight:600;color:var(--ink)}
+/* 정한 것마다 한 줄 '17–20 합주' — 시간은 굵은 초록, 코멘트는 길면 … (2026-10-01) */
+table.sheet th .fxl{display:block;max-width:88px;margin:0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.sheet th .fxl b{color:var(--accent);font-weight:800}
 table.sheet th .dow.win.plain{color:var(--muted);font-weight:500;font-size:10px}   /* 정하지 않은 날의 (기본과 다른) 시간대 */
 /* 정한 날 = 세로 한 줄을 검정 테두리로 (달력의 정한 날 칸과 같은 표시 · 2026-09-30 Benny "일관성")
    붙어 있는 정한 날은 한 덩어리 — 바깥 선(fixL 왼쪽 · fixR 오른쪽)만 굵게, 안쪽은 원래 얇은 선 */
@@ -483,7 +486,6 @@ table.sheet tfoot th.nm{font-size:11px;color:var(--muted);font-weight:600}
 .prow .btn.x{width:38px;padding:0;color:var(--muted)}
 /* 그 날 창 — 이 날로 정하기 */
 .dm-hap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
-.dm-hap #dmFixNow{color:var(--accent);font-weight:600;font-size:13.5px}
 /* 참여자 목록 */
 .list .li{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
 .list .li:last-child{border-bottom:0}
@@ -568,16 +570,36 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .dy-pill.all{color:var(--accent);border-color:rgba(var(--accent-rgb),.45)}
 .dy-pill.part{color:var(--amber);border-color:rgba(138,109,31,.4)}
 .dy-pill.no{color:var(--warn);border-color:rgba(180,71,47,.35)}
-.dy-best{margin:0 0 6px;font-size:13px;color:var(--muted)}
+/* 시간별 인원 = 막대그래프 — 높이 = 사람 수(막대 위 숫자), 아래 눈금 = 시각(칸 경계) (2026-10-01) */
+.dy-cap{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 4px;font-size:12px;color:var(--muted);font-weight:700}
+.dy-best{font-weight:500}
 .dy-best b{color:var(--ink)}
-.dy-strip{display:flex;gap:2px;overflow-x:auto;padding-bottom:4px;margin:0 0 12px}
-.dy-h{flex:1 0 20px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}
-.dy-c{width:100%;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--card)}
-.dy-c.full{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.dy-c.best{border-color:var(--accent)}
-.dy-c.z{background:transparent;border-style:dashed}
-.dy-l{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dy-strip{display:flex;overflow-x:auto;padding:0 0 2px 10px;margin:0 0 10px}
+.dy-h:last-child{margin-right:14px}   /* 끝 눈금('22시')이 넘쳐 가로 스크롤이 생기지 않게 */
+.dy-h{flex:1 0 22px;min-width:0;position:relative;display:flex;flex-direction:column;align-items:stretch;
+  appearance:none;border:0;background:transparent;padding:0 1px;font:inherit;color:inherit;cursor:pointer;border-radius:6px 6px 0 0}
+.dy-h.sel{background:rgba(var(--accent-rgb),.13)}
+.dy-h.from{background:rgba(var(--accent-rgb),.22)}
+.dy-n{height:15px;font-size:11px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dy-w{height:46px;display:flex;align-items:flex-end;border-bottom:1.5px solid var(--line)}
+.dy-b{display:block;width:100%;border-radius:4px 4px 0 0;background:rgba(var(--accent-rgb),.38)}
+.dy-b.full{background:var(--accent)}
+.dy-h.sel .dy-b{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.dy-h.sel .dy-w{border-bottom-color:var(--ink)}
+.dy-l{display:block;height:16px;padding-top:2px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;
+  white-space:nowrap;transform:translateX(-50%);text-align:left;width:0;overflow:visible}
+.dy-l.end{position:absolute;right:0;bottom:0;transform:translateX(50%)}
+/* 📌 정하기 — 정한 것 목록 + 새로 정하기 */
+.dm-fix{border:1px solid rgba(var(--accent-rgb),.28);background:rgba(var(--accent-rgb),.04);border-radius:12px;padding:10px;margin:0 0 12px}
+.fxrow{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.fxrow b{flex:0 0 auto;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.fxrow input{flex:1 1 auto;min-width:0;min-height:36px;padding:6px 10px;font-size:14px}
+.fxrow .btn.x{flex:0 0 auto;width:36px;min-height:36px;padding:0;color:var(--muted)}
+.fxrow .fxtag{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.dm-fix .fxst{margin:2px 0 8px;font-size:12.5px}
+.dm-fixadd{display:flex;gap:8px}
+.dm-fixadd input{flex:1 1 auto;min-width:0}
+.dm-fixadd .btn{flex:0 0 auto}
 .dy-list{display:flex;flex-direction:column;gap:7px;margin:0 0 12px}
 .dy-row{display:flex;gap:8px;font-size:13.5px;line-height:1.5}
 .dy-t{flex:0 0 64px;font-weight:700;color:var(--muted)}
@@ -597,3 +619,21 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 /* 그 날 창은 위에 붙인다 — ✕·△ 를 누르면 창 높이가 바뀌어 가운데 정렬이면 버튼이 위아래로 튀었다
    (2026-10-01 Benny: "세모 엑스 눌러도 반응이 없다" — 누른 뒤 버튼 자리가 60px 넘게 움직임) */
 .modal#dayModal{align-items:flex-start;padding-top:max(12px,9vh)}
+
+/* 표 위 안내 한 줄 + 가이드 버튼 (2026-10-01) */
+.callout.one{display:flex;align-items:center;gap:10px;padding:9px 12px}
+.callout.one .g-msg{flex:1 1 auto;min-width:0;font-size:13px}
+.callout.one .g-btn{flex:0 0 auto;appearance:none;border:1px solid rgba(var(--accent-rgb),.4);background:var(--card);color:var(--accent);
+  font:inherit;font-size:12.5px;font-weight:700;border-radius:999px;padding:5px 11px;cursor:pointer}
+#guideModal .guide{margin:12px 0 0;padding-left:20px;font-size:14px;line-height:1.7}
+/* 내 입력 달력 — 7칸 달력, 칸은 세로로 길게 (2026-10-01) */
+.cal.cv{gap:4px}
+.cal.cv .dowh{font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:2px 0}
+.cal.cv .dowh.sun{color:var(--warn)}
+.cal.cv .d{min-height:66px;padding:6px 0 5px;justify-content:flex-start;border-radius:10px}
+.cal.cv .d.off{border:0;background:transparent;opacity:1}
+.cal.cv .d.off .n{color:var(--muted);opacity:.45;font-weight:500}
+.cal.cv .d.off.sun .n{color:var(--warn)}
+.cal.cv .d .mk{font-size:19px;margin-top:2px}
+.cal.cv .d .fx{font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.cal.cv .cvmon{margin-top:10px}
