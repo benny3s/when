@@ -51,7 +51,12 @@ const SCHED_HTML = {
       <div class="calnav"><b id="cvLabel"></b></div>
       <div class="cal cv" id="cvGrid"></div>
     </div>
-    <div class="grid-wrap" id="tabView"><table class="sheet" id="sheet"></table></div>
+    <!-- PC 에서 옆으로 넘기기 — 사람이 많으면 아래 스크롤바까지 내려가기 힘들다 (2026-10-01 Benny) -->
+    <div class="hs-outer" id="tabOuter">
+      <div class="grid-wrap" id="tabView"><table class="sheet" id="sheet"></table></div>
+      <div class="hs-rail l"><button class="hs-btn" id="hsL" type="button" aria-label="왼쪽으로 넘기기">‹</button></div>
+      <div class="hs-rail r"><button class="hs-btn" id="hsR" type="button" aria-label="오른쪽으로 넘기기">›</button></div>
+    </div>
   </div>`,
   modals: `<!-- ══════════ 가이드 — 넣는 방법 (2026-10-01: 표 위 안내를 팝업으로) ══════════ -->
 <div class="modal" id="guideModal" hidden>
@@ -107,10 +112,6 @@ const SCHED_HTML = {
       <!-- 📌 정하기 — 막대에서 시작·끝을 누르고, 코멘트는 선택 (2026-10-01 Benny: "17-20 합주 / 20-22 청모") -->
       <div class="dm-fix" id="dmFixBox">
         <p class="dm-hint fxst" id="dmFixState"></p>
-        <div class="dm-fixadd">
-          <input type="text" id="dmFixNote" maxlength="30" placeholder="무슨 일정? (선택)" aria-label="무슨 일정인지 (선택)">
-          <button class="btn dark" id="dmFix" type="button">📌 정하기</button>
-        </div>
         <div id="dmFixList"></div>
       </div>
       <div id="dmPeople"></div>
@@ -785,7 +786,7 @@ function renderSheetArea(){
   $("#segCal").setAttribute("aria-selected", String(cal));
   $("#segTab").setAttribute("aria-selected", String(!cal));
   $("#calView").hidden = !cal;
-  $("#tabView").hidden = cal;
+  $("#tabOuter").hidden = cal;
   if (cal) renderCalView();
 }
 /* 달력은 **한 장** — 후보 날짜가 있는 주만 이어 붙인다. 달 넘기기(‹ ›)는 없다
@@ -871,7 +872,20 @@ function renderCalView(){
 /** 표와 달력을 **같이** 다시 그린다.
     ⚠️ `drawSheet()` 만 부르면 달력 보기에서는 화면이 그대로다
     (2026-09-22o Benny: "가능으로 입력했는데 화면이 안바뀌어") */
-function paintSheet(){ drawSheet(); renderSheetArea(); }
+function paintSheet(){ drawSheet(); renderSheetArea(); hsUpdate(); }
+/** 표 좌우 넘기기 버튼 — 넘길 게 있을 때만, 끝에 닿은 쪽은 숨긴다. 왼쪽 버튼은 이름 칸 바로 옆에 */
+function hsUpdate(){
+  const w = $("#tabView"), o = $("#tabOuter"); if (!w || !o) return;
+  const nm = w.querySelector("th.nm");
+  o.style.setProperty("--nmw", (nm ? nm.offsetWidth : 0) + "px");
+  const max = w.scrollWidth - w.clientWidth;
+  o.classList.toggle("atL", w.scrollLeft <= 2);
+  o.classList.toggle("atR", w.scrollLeft >= max - 2);
+}
+function hsGo(dir){
+  const w = $("#tabView"), nm = w.querySelector("th.nm");
+  w.scrollBy({ left: dir * Math.max(120, (w.clientWidth - (nm ? nm.offsetWidth : 0)) * 0.8), behavior: "smooth" });
+}
 
 /* ── 표: 줄 = 사람, 칸 = 날짜 ── */
 let pastOpen = false;                    // 지난 날짜 펼침 (표)
@@ -1100,19 +1114,10 @@ function dmMark(d){
   if (!on.length) return maybeSel.has(d) ? "t" : "";
   return on.length >= hoursFor(d).length ? "o" : "t";
 }
-/** 날짜 머리 창의 요약 — 누가 되는지, 몇 시에 가장 많이 되는지 */
-let fxA = null, fxZ = null, fxFrom = null;          // 📌 고를 시간 — fxA 칸 ~ fxZ 칸 (끝 시각은 fxZ+1)
-/** 창을 열 때 — 가장 많이 되는 시간(붙어 있는 첫 덩어리)을 미리 골라 둔다. 이미 정한 시간이면 비워 둔다 */
-function fxPreset(d){
-  fxA = fxZ = fxFrom = null;
-  const hs = hoursFor(d); if (!hs.length) return;
-  const cnt = hs.map(h => availAt(d, h).length), best = Math.max.apply(null, cnt);
-  if (!best) return;
-  const i = cnt.indexOf(best); let j = i;
-  while (j + 1 < hs.length && cnt[j + 1] === best && hs[j + 1] === hs[j] + 1) j++;
-  if (fixes().indexOf(pickTxt(d, hs[i], hs[j] + 1)) >= 0) return;
-  fxA = hs[i]; fxZ = hs[j];
-}
+/** 날짜 머리 창의 요약 — 누가 되는지, 시간별 몇 명
+    (2026-10-01 Benny: "추천 시간을 녹색으로 표시하면 더 헷갈려" → 미리 골라 두지 않는다) */
+let fxA = null, fxZ = null, fxFrom = null;          // 고른 시간(미확정) — fxA 칸 ~ fxZ 칸 (끝 시각은 fxZ+1)
+function fxPreset(){ fxA = fxZ = fxFrom = null; }
 function renderDayInfo(d){
   const box = $("#dmDay"); if (!box) return;
   box.innerHTML = "";
@@ -1135,37 +1140,38 @@ function renderDayInfo(d){
      (2026-10-01 Benny: "시간 바에서 뭐가 시간이고 뭐가 사람수인지 직관적이지가 않아")
      막대를 누르면 📌 정할 시간을 고른다 — 시작 칸, 끝 칸 (내 입력의 △ 와 같은 방식) */
   if (hs.length && tot){
-    const cnt = hs.map(h => availAt(d, h).length), best = Math.max.apply(null, cnt);
-    /* (2026-10-01 Benny: "시간을 강조하고 사람 수는 덜 — 헤더를 시간으로, 바로 밑에 몇 명, 바로 밑에 이유.
-        확정된 일정은 검정 네모") → 위 줄 = 시각(굵게), 아래 칸 = 되는 사람 수(작게·옅게), 📌 = 검정 테두리 */
+    const cnt = hs.map(h => availAt(d, h).length);
+    /* 막대 = 되는 사람 수(위에 작은 숫자), 시각 = **칸 사이** 눈금 (2026-10-01 Benny: "시간은 네모와 네모 사이, 사람 수는 막대 모양")
+       검정 실선 네모 = 📌 확정 · 점선 네모 = 고른 시간·후보(미확정) */
     const cap = document.createElement("div"); cap.className = "dy-cap";
-    const cl = document.createElement("span"); cl.textContent = "칸 숫자 = 되는 사람 (전체 " + tot + "명)";
-    const cr = document.createElement("span"); cr.className = "dy-best";
-    if (best > 0){
-      const b = document.createElement("b"); b.textContent = runsOf(hs.filter((h, i) => cnt[i] === best), true) + "시";
-      cr.append("최다 ", b, " " + best + "명" + (best === tot ? " 🎉" : ""));
-    }
-    cap.append(cl, cr); box.appendChild(cap);
-    /* 📌 정한 시간(이력 '예정' 포함)을 칸마다 — 붙은 칸은 한 네모로 (바깥 선만) */
-    const fixRanges = fixedLabels(d).map(x => pickParse(x.t)).filter(Boolean);
-    const inFix = h => fixRanges.find(r => h >= r.from && h < r.to);
+    cap.textContent = "막대 = 되는 사람 수 (전체 " + tot + "명)";
+    box.appendChild(cap);
+    const rows = fixRows(d);
+    const inR = (h, list) => list.find(r => h >= r.p.from && h < r.p.to);
+    const fixedR = rows.filter(r => r.on), dashR = rows.filter(r => !r.on);
     const strip = document.createElement("div"); strip.className = "dy-strip";
     hs.forEach((h, i) => {
       const n = cnt[i];
       const col = document.createElement("button"); col.type = "button"; col.className = "dy-h";
-      if (fxA !== null && h >= fxA && h <= fxZ) col.classList.add("sel");
-      if (fxFrom === h) col.classList.add("from");
-      const tm = document.createElement("span"); tm.className = "dy-tm"; tm.textContent = String(h) + (i === 0 ? "시" : "");
-      const c = document.createElement("span");
-      const r = inFix(h);
-      c.className = "dy-c" + (n && n === tot ? " full" : "") + (r ? " fix" + (h === r.from ? " fixL" : "") + (h === r.to - 1 ? " fixR" : "") : "");
-      if (n && n !== tot) c.style.background = "rgba(var(--accent-rgb)," + (0.05 + 0.25 * (n / tot)).toFixed(3) + ")";
-      c.textContent = n ? String(n) : "·";
-      col.append(tm, c);
-      col.title = h + "–" + (h + 1) + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "") + (r ? " · 📌 정함" : "");
+      const lab = document.createElement("span"); lab.className = "dy-l"; lab.textContent = h + (i === 0 ? "시" : "");
+      col.appendChild(lab);
+      if (i === hs.length - 1){ const e = document.createElement("span"); e.className = "dy-l end"; e.textContent = String(h + 1); col.appendChild(e); }
+      const well = document.createElement("span"); well.className = "dy-w";
+      const f = inR(h, fixedR), g = inR(h, dashR);
+      if (f) well.classList.add("fx", ...(h === f.p.from ? ["fxL"] : []), ...(h === f.p.to - 1 ? ["fxR"] : []));
+      if (g) well.classList.add("dz", ...(h === g.p.from ? ["dzL"] : []), ...(h === g.p.to - 1 ? ["dzR"] : []));
+      if (fxFrom === h) well.classList.add("from");
+      const num = document.createElement("span"); num.className = "dy-n"; num.textContent = n ? String(n) : "";
+      const bar = document.createElement("span"); bar.className = "dy-b";
+      bar.style.height = n ? Math.max(8, Math.round(78 * n / tot)) + "%" : "0";
+      well.append(num, bar);
+      col.appendChild(well);
+      col.title = h + "–" + (h + 1) + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "");
       col.setAttribute("aria-label", h + "시부터 한 시간 · " + n + "명");
       col.onclick = () => {
-        if (fxFrom === null){ fxFrom = h; fxA = fxZ = h; }
+        /* 고른 범위 안을 다시 누르면 해제 (2026-10-01 Benny) */
+        if (fxFrom === null && fxA !== null && h >= fxA && h <= fxZ){ fxA = fxZ = null; }
+        else if (fxFrom === null){ fxFrom = h; fxA = fxZ = h; }
         else { fxA = Math.min(fxFrom, h); fxZ = Math.max(fxFrom, h); fxFrom = null; }
         renderDayInfo(d);
       };
@@ -1192,40 +1198,73 @@ function renderDayInfo(d){
   });
   pbox.appendChild(list);
 }
-/** 📌 — 고른 시간 안내 + (입력칸·정하기 버튼은 HTML) + 그 날 정한 것 목록(코멘트 고치기·취소) */
+/** 그 날 줄들 — 📌 확정(시간표 · 이력 '예정') + 후보(미확정) + 막대에서 지금 고른 시간(저장 전).
+    on = 확정, ext = 이력에만 있는 '예정', tmp = 아직 저장 안 한 고른 시간 */
+function fixRows(d){
+  const out = [], seen = new Set(), ext = shownFixes().filter(t => fixes().indexOf(t) < 0);
+  const add = (t, o) => { const p = pickParse(t); if (!p || p.d !== d || seen.has(t)) return; seen.add(t); out.push(Object.assign({ t, p, time: p.from + "–" + p.to }, o)); };
+  fixes().forEach(t => add(t, { on: true }));
+  ext.forEach(t => add(t, { on: true, ext: true }));
+  picks().forEach(t => add(t, { on: false }));
+  if (fxA !== null && fxFrom === null) add(pickTxt(d, fxA, fxZ + 1), { on: false, tmp: true });
+  return out.sort((a, b) => a.p.from - b.p.from || a.p.to - b.p.to);
+}
+let fxTmpNote = "";                                 // 고른 시간(저장 전)에 적어 둔 '무슨 일정'
+/** 📌 — 안내 한 줄 + 줄 목록 [정하기/확정] 17–20 [무슨 일정] [✕]
+    (2026-10-01 Benny: "왼쪽 정하기 버튼을 눌러야 확정, 시간 범위만 고르면 미확정 · 이력도 누르면 해제, 옆에 삭제") */
 function renderFixBox(d){
-  const st = $("#dmFixState"), btn = $("#dmFix");
+  const st = $("#dmFixState");
   st.classList.remove("ok");
-  if (fxFrom !== null){ st.textContent = fxFrom + "시부터 — 끝 시간 칸을 눌러주세요"; btn.disabled = true; }
+  if (fxFrom !== null) st.textContent = fxFrom + "시부터 — 끝 시간 칸을 눌러주세요";
   else if (fxA !== null){
-    const t = pickTxt(d, fxA, fxZ + 1), who = pickWho(t).length;
-    const dup = fixes().indexOf(t) >= 0;
-    st.textContent = fxA + "–" + (fxZ + 1) + "시 · " + who + "명 내내 가능" + (dup ? " · 이미 정했어요" : "");
-    st.classList.add("ok"); btn.disabled = dup;
-  } else { st.textContent = "위 시간 칸에서 시작·끝을 눌러 고르세요"; btn.disabled = true; }
+    st.textContent = fxA + "–" + (fxZ + 1) + "시 · " + pickWho(pickTxt(d, fxA, fxZ + 1)).length + "명 가능 — '정하기' 를 눌러야 확정";
+    st.classList.add("ok");
+  } else st.textContent = "위 시간 칸에서 시작·끝을 눌러 고르세요";
   const lb = $("#dmFixList"); lb.innerHTML = "";
-  fixedLabels(d).forEach(x => {
-    const own = fixes().indexOf(x.t) >= 0;           // 이력에만 있는 '예정' 합주는 여기서 못 지운다
-    const r = document.createElement("div"); r.className = "fxrow";
-    const tm = document.createElement("b"); tm.textContent = "📌 " + x.time;
+  fixRows(d).forEach(x => {
+    const r = document.createElement("div"); r.className = "fxrow" + (x.on ? " on" : "") + (x.tmp ? " tmp" : "");
+    const go = document.createElement("button"); go.type = "button"; go.className = "btn fxgo" + (x.on ? " dark" : "");
+    go.textContent = x.on ? "📌 확정" : "정하기";
+    go.setAttribute("aria-pressed", String(!!x.on));
+    go.title = x.on ? "누르면 확정 해제 (후보로 남아요)" : "누르면 📌 확정";
+    const tm = document.createElement("b"); tm.textContent = x.time;
+    if (x.ext){ const e = document.createElement("small"); e.textContent = "이력"; tm.appendChild(e); }
     const inp = document.createElement("input");
-    inp.type = "text"; inp.maxLength = FIXNOTE_MAX; inp.value = x.note; inp.placeholder = "무슨 일정? (선택)";
+    inp.type = "text"; inp.maxLength = FIXNOTE_MAX; inp.placeholder = "무슨 일정? (선택)";
+    inp.value = x.tmp ? fxTmpNote : fixNoteOf(x.t);
     inp.setAttribute("aria-label", x.time + " 무슨 일정인지");
-    inp.addEventListener("change", () => { setFixNote(x.t, inp.value); renderDm(); });
-    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); inp.blur(); } });
-    r.append(tm, inp);
-    if (own){
-      const del = document.createElement("button"); del.type = "button"; del.className = "btn x"; del.textContent = "✕";
-      del.setAttribute("aria-label", x.time + " 정한 거 취소");
-      del.onclick = () => { setFixes(fixes().filter(f => f !== x.t), fmtFull(d) + " " + x.time + " 정한 거 취소됨"); renderDm(); };
-      r.appendChild(del);
-    } else {
-      const tg = document.createElement("span"); tg.className = "fxtag"; tg.textContent = "이력";
-      tg.title = "합주 이력의 '예정' — 지우려면 이력에서";
-      r.appendChild(tg);
-    }
+    if (x.tmp) inp.addEventListener("input", () => { fxTmpNote = inp.value; });
+    else inp.addEventListener("change", () => { setFixNote(x.t, inp.value); renderDm(); });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); x.tmp ? go.click() : inp.blur(); } });
+    const del = document.createElement("button"); del.type = "button"; del.className = "btn x"; del.textContent = "✕";
+    del.setAttribute("aria-label", x.time + " 지우기");
+    go.onclick = () => fixRowToggle(d, x, inp.value);
+    del.onclick = () => fixRowDelete(d, x);
+    r.append(go, tm, inp, del);
     lb.appendChild(r);
   });
+}
+/** 정하기 ↔ 해제. 해제한 건 후보로 남는다 (지우려면 ✕) */
+function fixRowToggle(d, x, note){
+  const nt = String(note || "").replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
+  const pk = picks();
+  if (!x.on){
+    if (x.tmp){ fxA = fxZ = null; fxTmpNote = ""; }
+    setFixes(fixes().concat([x.t]), "📌 " + fmtPick(x.t) + (nt ? " " + nt : "") + " 확정",
+             nt ? { [x.t]: nt } : null, pk.filter(t => t !== x.t));
+  } else if (x.ext){
+    if (typeof releaseExtraFix !== "function" || !releaseExtraFix(x.t)) return;   // 이력 '예정' 을 지운다 (묻고)
+    setFixes(fixes(), fmtPick(x.t) + " 확정 해제 — 후보로 남겼어요", null, pk.concat([x.t]));
+  } else {
+    setFixes(fixes().filter(t => t !== x.t), fmtPick(x.t) + " 확정 해제 — 후보로 남겼어요", null, pk.concat([x.t]));
+  }
+  renderDm();
+}
+function fixRowDelete(d, x){
+  if (x.tmp){ fxA = fxZ = null; fxTmpNote = ""; renderDm(); return; }
+  if (x.ext){ if (typeof releaseExtraFix !== "function" || !releaseExtraFix(x.t)) return; }
+  setFixes(fixes().filter(t => t !== x.t), fmtPick(x.t) + " 지웠어요", { [x.t]: "" }, picks().filter(t => t !== x.t));
+  renderDm();
 }
 function renderDm(){
   const d = dmDate; if (!d) return;
@@ -1304,7 +1343,7 @@ function openDay(d, mode){
   $("#dmTitle").textContent = fmtFull(d) + " · " + (ftT.length ? "📌 " + ftT.join(", ") + "시" : winLabel(d));
   $("#dmInput").value = noteDraft[d] || "";
   renderDmAdmin(d);
-  fxPreset(d); $("#dmFixNote").value = "";
+  fxPreset(); fxTmpNote = "";
   renderDm();
   if ($("#dayModal").hidden) openModal("dayModal");   // 이미 열려 있는 창을 다시 그릴 땐 칸을 더 밀지 않는다
 }
@@ -1480,16 +1519,19 @@ function isFixed(t){ return fixes().indexOf(t) >= 0; }
 function fixNotes(){ return (meet() && meet().fixNotes) || {}; }
 function fixNoteOf(t){ return fixNotes()[t] || ""; }
 /** notes 를 주면 코멘트도 같이 바꾼다. 없어진 📌 의 코멘트는 버린다 */
-function setFixes(list, msg, notes){
+function setFixes(list, msg, notes, pickList){
   const v = Array.from(new Set(list)).sort().join(", ");
   const after = v ? v.split(", ") : [];
-  const keep = new Set(after.concat(shownFixes().filter(t => fixes().indexOf(t) < 0)));
+  const pl = pickList ? Array.from(new Set(pickList)).sort() : null;
+  if (pl && pl.length > 20){ setStatus("후보는 20개까지예요", "err"); return; }
+  const keep = new Set(after.concat(shownFixes().filter(t => fixes().indexOf(t) < 0), pl || picks()));
   const src = Object.assign({}, fixNotes(), notes || {}), nn = {};
   Object.keys(src).forEach(k => { if (keep.has(k) && src[k]) nn[k] = src[k]; });
   /* 밴드매니저: 📌 정한 게 바뀌면 합주 이력에 '예정' 회차를 만들고 지운다 (+ 코멘트를 이력에) */
   if (typeof onFixesChanged === "function"){ try { onFixesChanged(fixes(), after, nn); } catch(e){} }
-  act({ action:"meet_set", fixed: v, fixNotes: JSON.stringify(nn) }, msg,
-      () => { if (ST.meet){ ST.meet.fixed = v; ST.meet.fixNotes = nn; } });
+  const p = { action:"meet_set", fixed: v, fixNotes: JSON.stringify(nn) };
+  if (pl) p.picks = JSON.stringify(pl);
+  act(p, msg, () => { if (ST.meet){ ST.meet.fixed = v; ST.meet.fixNotes = nn; } if (pl) ST.picks = pl.slice(); });
 }
 function setFixNote(t, note){
   note = String(note || "").replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
@@ -1757,18 +1799,10 @@ $("#dmN").onclick = () => {
 $("#dmInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#dmSave").click(); } });
 /* 저장 = 닫기. 닫을 때 이유를 옮기고 저장한다 (closeDay) */
 $("#dmSave").onclick = () => closeDay();
-/* 📌 정하기 — 막대에서 고른 시간 + 코멘트(선택). 한 날에 여러 개 (17–20 합주 / 20–22 청모).
-   창은 닫지 않는다 — 이어서 하나 더 정할 수 있게 */
-$("#dmFix").onclick = () => {
-  const d = dmDate; if (!d || fxA === null || fxFrom !== null) return;
-  const t = pickTxt(d, fxA, fxZ + 1);
-  if (fixes().indexOf(t) >= 0) return;
-  const note = $("#dmFixNote").value.replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
-  setFixes(fixes().concat([t]), "📌 " + fmtPick(t) + (note ? " " + note : "") + " 로 정했습니다", note ? { [t]: note } : null);
-  $("#dmFixNote").value = ""; fxA = fxZ = null;
-  renderDm();
-};
-$("#dmFixNote").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("#dmFix").click(); } });
+$("#hsL").onclick = () => hsGo(-1);
+$("#hsR").onclick = () => hsGo(1);
+$("#tabView").addEventListener("scroll", hsUpdate, { passive: true });
+window.addEventListener("resize", hsUpdate);
 $("#dmDrop").onclick = () => {
   const d = dmDate; if (!d) return;
   if (!confirm(fmtFull(d) + " 을 후보에서 뺍니다. 계속할까요?")) return;

@@ -570,34 +570,40 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .dy-pill.all{color:var(--accent);border-color:rgba(var(--accent-rgb),.45)}
 .dy-pill.part{color:var(--amber);border-color:rgba(138,109,31,.4)}
 .dy-pill.no{color:var(--warn);border-color:rgba(180,71,47,.35)}
-/* 시간별 — 위 = 시각(굵게), 아래 칸 = 되는 사람 수(작게), 📌 정한 시간 = 검정 네모 (2026-10-01) */
-.dy-cap{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 4px;font-size:11.5px;color:var(--muted)}
-.dy-best b{color:var(--ink)}
-.dy-strip{display:flex;overflow-x:auto;margin:0 0 8px;padding:2px 0 3px}
-.dy-h{flex:1 0 22px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:3px;
+/* 시간별 — 위 눈금 = 시각(칸 사이), 막대 = 되는 사람 수, 검정 실선 = 📌 확정, 점선 = 고른 시간·후보 (2026-10-01) */
+.dy-cap{margin:0 0 2px;font-size:11.5px;color:var(--muted)}
+.dy-strip{display:flex;overflow-x:auto;margin:0 0 10px;padding:0 0 3px 10px}
+.dy-h{flex:1 0 22px;min-width:0;position:relative;display:flex;flex-direction:column;align-items:stretch;
   appearance:none;border:0;background:transparent;padding:0;font:inherit;color:inherit;cursor:pointer}
-.dy-tm{font-size:13px;font-weight:800;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;border-radius:6px}
-.dy-c{height:26px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:500;color:var(--muted);
-  font-variant-numeric:tabular-nums;background:var(--card);border-right:1px solid var(--card);position:relative}
-.dy-c.full{background:rgba(var(--accent-rgb),.42);color:var(--ink);font-weight:700}
-.dy-c.fix{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink)}
-.dy-c.fix.fixL{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink),inset 2px 0 0 var(--ink)}
-.dy-c.fix.fixR{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink),inset -2px 0 0 var(--ink)}
-.dy-c.fix.fixL.fixR{box-shadow:inset 0 0 0 2px var(--ink)}
-.dy-h.sel .dy-tm{background:var(--accent);color:var(--on-accent)}
-.dy-h.from .dy-tm{background:rgba(var(--accent-rgb),.35);color:var(--ink)}
-/* 📌 정하기 — 정한 것 목록 + 새로 정하기 */
-.dm-fix{border:1px solid rgba(var(--accent-rgb),.28);background:rgba(var(--accent-rgb),.04);border-radius:12px;padding:10px;margin:0 0 12px}
-.fxrow{display:flex;align-items:center;gap:8px;margin:0 0 6px}
-.fxrow b{flex:0 0 auto;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.dy-h:last-child{margin-right:14px}
+.dy-l{display:block;height:17px;font-size:11.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;
+  white-space:nowrap;width:0;overflow:visible;transform:translateX(-50%);text-align:left}
+.dy-l.end{position:absolute;top:0;right:0;width:auto;transform:translateX(50%)}
+.dy-w{position:relative;height:56px;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;
+  padding:0 2px;border-left:1px dashed var(--line);border-bottom:1.5px solid var(--line)}
+.dy-h:last-child .dy-w{border-right:1px dashed var(--line)}
+.dy-n{font-size:9.5px;color:var(--muted);text-align:center;line-height:1.2;font-variant-numeric:tabular-nums}
+.dy-b{display:block;border-radius:3px 3px 0 0;background:rgba(var(--accent-rgb),.45)}
+.dy-w.from{background:rgba(0,0,0,.06)}
+.dy-w.fx{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink)}
+.dy-w.fx.fxL{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink),inset 2px 0 0 var(--ink)}
+.dy-w.fx.fxR{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink),inset -2px 0 0 var(--ink)}
+.dy-w.fx.fxL.fxR{box-shadow:inset 0 0 0 2px var(--ink)}
+.dy-w.dz::after{content:"";position:absolute;inset:3px 0;border-top:1.5px dashed var(--ink);border-bottom:1.5px dashed var(--ink);pointer-events:none}
+.dy-w.dz.dzL::after{left:3px;border-left:1.5px dashed var(--ink)}
+.dy-w.dz.dzR::after{right:3px;border-right:1.5px dashed var(--ink)}
+.dy-w.dz{background:rgba(0,0,0,.04)}
+/* 📌 줄 목록 — [정하기/📌 확정] 17–20 [무슨 일정] [✕] */
+.dm-fix{border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:10px;margin:0 0 12px}
+.dm-fix .fxst{margin:0 0 8px;font-size:12.5px}
+.fxrow{display:flex;align-items:center;gap:7px;margin:0 0 6px}
+.fxrow:last-child{margin-bottom:0}
+.fxrow .fxgo{flex:0 0 auto;min-height:36px;padding:0 10px;font-size:12.5px;white-space:nowrap}
+.fxrow b{flex:0 0 auto;min-width:42px;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.fxrow b small{display:block;font-size:10px;font-weight:600;color:var(--muted);line-height:1}
 .fxrow input{flex:1 1 auto;min-width:0;min-height:36px;padding:6px 10px;font-size:14px}
 .fxrow .btn.x{flex:0 0 auto;width:36px;min-height:36px;padding:0;color:var(--muted)}
-.fxrow .fxtag{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
-.dm-fix .fxst{margin:0 0 6px;font-size:12.5px}
-.dm-fix #dmFixList:not(:empty){margin-top:10px;padding-top:8px;border-top:1px solid rgba(var(--accent-rgb),.2)}
-.dm-fixadd{display:flex;gap:8px}
-.dm-fixadd input{flex:1 1 auto;min-width:0}
-.dm-fixadd .btn{flex:0 0 auto}
+.fxrow.tmp{outline:1.5px dashed var(--ink);outline-offset:3px;border-radius:8px}
 .dy-list{display:flex;flex-direction:column;gap:7px;margin:0 0 12px}
 .dy-row{display:flex;gap:8px;font-size:13.5px;line-height:1.5}
 .dy-t{flex:0 0 64px;font-weight:700;color:var(--muted)}
@@ -636,3 +642,16 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .cal.cv .d .fx{font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .cal.cv .cvmon{margin-top:10px}
 .cal.cv .d .cnt{margin-top:auto;font-size:9.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+/* 표 좌우 넘기기 (PC) — 세로로 긴 버튼, 화면 가운데 높이에 붙어 따라온다 (2026-10-01) */
+.hs-outer{position:relative}
+.hs-rail{display:none;position:absolute;top:0;bottom:0;width:30px;pointer-events:none;z-index:5}
+.hs-rail.l{left:var(--nmw,0px)}
+.hs-rail.r{right:0}
+.hs-btn{position:sticky;top:calc(50vh - 36px);pointer-events:auto;width:30px;height:72px;margin:0;
+  appearance:none;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 88%,transparent);color:var(--ink);
+  font:inherit;font-size:22px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.hs-rail.l .hs-btn{border-radius:0 10px 10px 0}
+.hs-rail.r .hs-btn{border-radius:10px 0 0 10px}
+.hs-btn:hover{background:var(--card)}
+@media (pointer:fine){ .hs-rail{display:block} }
+.hs-outer.atL .hs-rail.l,.hs-outer.atR .hs-rail.r{display:none}
