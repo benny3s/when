@@ -655,3 +655,7 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .hs-btn:hover{background:var(--card)}
 @media (pointer:fine){ .hs-rail{display:block} }
 .hs-outer.atL .hs-rail.l,.hs-outer.atR .hs-rail.r{display:none}
+.fxrow.lock{opacity:.7}
+.fxrow.lock .fxgo:disabled,.fxrow.lock .btn.x:disabled{opacity:1}
+.fxrow.lock .btn.x{visibility:hidden}
+.dm-fix .fxwarn{color:var(--warn);font-weight:700}

@@ -677,8 +677,10 @@ function renderWho(){
   const box = $("#whoChips"); box.innerHTML = "";
   mem.forEach(n => {
     const b = document.createElement("button");
-    b.className = "chip" + (isOff(n) ? " off" : "");
-    if (isOff(n)) b.title = "이 시간표에는 참여하지 않아요";
+    /* 흐린 칩(이 시간표에서 뺀 사람)은 **일정 화면일 때만** — 밴드매니저 합주곡·이력 탭에선 의미가 없다 (schedActive 훅) */
+    const offHere = isOff(n) && (typeof schedActive !== "function" || schedActive());
+    b.className = "chip" + (offHere ? " off" : "");
+    if (offHere) b.title = "이 시간표에는 참여하지 않아요";
     b.type = "button"; b.textContent = n + (n === me ? " (나)" : "");
     b.setAttribute("aria-pressed", String(n === me));
     b.onclick = () => pickMe(n);
@@ -746,7 +748,7 @@ function pickMe(n){
   if (!M){ renderAll(); return; }                   // 시간표가 없을 때(밴드매니저 합주곡·이력) — 이름만 고른다
   if (isOff(n)){                                    // 이 시간표에서 뺀 사람 — 다시 만들지 않고 이름만 고른다
     loadMine(true); renderAll();
-    setStatus(n + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정의 멤버에서 켤 수 있어요");
+    if (typeof schedActive !== "function" || schedActive()) setStatus(n + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정의 멤버에서 켤 수 있어요");
     return;
   }
   if (!members().includes(n)){
@@ -1218,7 +1220,12 @@ function fixRows(d){
   const out = [], seen = new Set(), ext = shownFixes().filter(t => fixes().indexOf(t) < 0);
   const add = (t, o) => { const p = pickParse(t); if (!p || p.d !== d || seen.has(t)) return; seen.add(t); out.push(Object.assign({ t, p, time: p.from + "–" + p.to }, o)); };
   fixes().forEach(t => add(t, { on: true }));
-  ext.forEach(t => add(t, { on: true, ext: true }));
+  ext.forEach(t => {
+    /* 밴드매니저: 이력에만 있는 것(src '이력') / 다른 시간표에서 정한 것(src = 그 시간표 이름, lock — 거기서 고친다) */
+    let info = { src: "이력", lock: false };
+    if (typeof extraFixInfo === "function"){ try { info = Object.assign(info, extraFixInfo(t) || {}); } catch(e){} }
+    add(t, { on: true, ext: true, src: info.src, lock: !!info.lock });
+  });
   picks().forEach(t => add(t, { on: false }));
   if (fxA !== null && fxFrom === null) add(pickTxt(d, fxA, fxZ + 1), { on: false, tmp: true });
   return out.sort((a, b) => a.p.from - b.p.from || a.p.to - b.p.to);
@@ -1233,6 +1240,13 @@ function renderFixBox(d){
   else if (fxA !== null){
     st.textContent = fxA + "–" + (fxZ + 1) + "시 · " + pickWho(pickTxt(d, fxA, fxZ + 1)).length + "명 가능 — '정하기' 를 눌러야 확정";
     st.classList.add("ok");
+    /* 이미 정한 것과 겹치면 알려 준다 (다른 시간표·이력 포함) — 2026-10-01 "충돌은 없는지" */
+    const hit = fixRows(d).filter(r => r.on && r.p.from < fxZ + 1 && fxA < r.p.to);
+    if (hit.length){
+      const w = document.createElement("span"); w.className = "fxwarn";
+      w.textContent = " ⚠ 겹침: " + hit.map(r => r.time + (fixNoteOf(r.t) ? " " + fixNoteOf(r.t) : "")).join(", ");
+      st.appendChild(w);
+    }
   } else st.textContent = "위 시간 칸에서 시작·끝을 눌러 고르세요";
   const lb = $("#dmFixList"); lb.innerHTML = "";
   fixRows(d).forEach(x => {
@@ -1242,7 +1256,7 @@ function renderFixBox(d){
     go.setAttribute("aria-pressed", String(!!x.on));
     go.title = x.on ? "누르면 확정 해제 (후보로 남아요)" : "누르면 📌 확정";
     const tm = document.createElement("b"); tm.textContent = x.time;
-    if (x.ext){ const e = document.createElement("small"); e.textContent = "이력"; tm.appendChild(e); }
+    if (x.ext){ const e = document.createElement("small"); e.textContent = x.src || "이력"; tm.appendChild(e); }
     const inp = document.createElement("input");
     inp.type = "text"; inp.maxLength = FIXNOTE_MAX; inp.placeholder = "무슨 일정? (선택)";
     inp.value = x.tmp ? fxTmpNote : fixNoteOf(x.t);
@@ -1254,6 +1268,10 @@ function renderFixBox(d){
     del.setAttribute("aria-label", x.time + " 지우기");
     go.onclick = () => fixRowToggle(d, x, inp.value);
     del.onclick = () => fixRowDelete(d, x);
+    if (x.lock){                                     // 다른 시간표 것 — 보기만 (그 시간표에서 고친다)
+      go.disabled = del.disabled = inp.readOnly = true;
+      r.classList.add("lock"); r.title = "‘" + x.src + "’ 시간표에서 정한 거예요 — 고치려면 그 시간표에서";
+    }
     r.append(go, tm, inp, del);
     lb.appendChild(r);
   });
@@ -1531,7 +1549,11 @@ function fixes(){ return String((meet() && meet().fixed) || "").split(/\s*,\s*/)
 function isFixed(t){ return fixes().indexOf(t) >= 0; }
 /* 📌 코멘트 — 정한 것마다 (선택). 이력에만 있는 '예정' 합주(extraFixes)에도 달 수 있다 */
 function fixNotes(){ return (meet() && meet().fixNotes) || {}; }
-function fixNoteOf(t){ return fixNotes()[t] || ""; }
+function fixNoteOf(t){
+  if (fixNotes()[t]) return fixNotes()[t];
+  if (typeof extraFixNote === "function"){ try { return extraFixNote(t) || ""; } catch(e){} }
+  return "";
+}
 /** notes 를 주면 코멘트도 같이 바꾼다. 없어진 📌 의 코멘트는 버린다 */
 function setFixes(list, msg, notes, pickList){
   const v = Array.from(new Set(list)).sort().join(", ");
