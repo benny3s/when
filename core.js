@@ -324,6 +324,16 @@ function openOutside(){
   try { navigator.clipboard.writeText(u); setStatus("주소를 복사했어요 — 사파리에 붙여넣기 해주세요", "ok"); }
   catch(e){ prompt("이 주소를 사파리에 붙여넣어 주세요", u); }
 }
+/** 공유 = **한 줄** "밴드매니저 - 키니피 https://…" (2026-10-01 Benny: "약속잡자랑 밴드매니저 공유할 때 이렇게")
+    휴대폰은 공유창에 그 한 줄을 text 로만 넘긴다(앱마다 text·url 을 따로 붙이는 순서가 달라서). PC 는 그 한 줄을 복사 */
+async function shareLine(line, copiedMsg){
+  if (canNativeShare()){
+    try { await navigator.share({ text: line }); return; }
+    catch(e){ if (e && (e.name === "AbortError" || e.name === "NotAllowedError")) return; }   // 그냥 닫은 것
+  }
+  try { await navigator.clipboard.writeText(line); setStatus(copiedMsg || "복사했어요 — 붙여넣어 보내세요", "ok"); }
+  catch(e){ prompt("이 글을 복사해서 보내세요", line); }
+}
 /* 시스템 공유창은 휴대폰(터치)에서만 — PC 크롬은 창이 뜨다 말아서 바로 복사로 (2026-10-01 Benny) */
 function canNativeShare(){
   return !!navigator.share && !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);

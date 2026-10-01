@@ -664,3 +664,8 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .seg-row .seg{margin-bottom:0}
 .seg-row #segFix{flex:0 0 auto}
 .g-row .g-tip{font-size:12.5px;color:var(--muted)}
+/* 일정 확정 표 — 📌 확정 = 검정, 후보 = 점선, 지난 날짜 접기 (2026-10-01) */
+.hcell.inpick,.hcell.full.inpick{background:rgba(0,0,0,.07);color:var(--ink);outline:2px dashed var(--ink);outline-offset:-3px;opacity:1}
+.hcell.infix,.hcell.full.infix{background:var(--ink);color:#fff;opacity:1}
+.grid .gc.past{opacity:.45}
+.grid .gc.pasttog{grid-column:1/-1;text-align:left;justify-content:flex-start;padding:8px 10px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;background:var(--soft)}

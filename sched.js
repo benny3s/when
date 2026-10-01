@@ -190,7 +190,7 @@ const SCHED_HTML = {
     <div class="sbody">
     <div id="picksCard"></div>
     <h3 class="subh" style="margin-top:18px">직접 고르기</h3>
-    <p class="hint" style="margin:4px 0 0">날짜를 누르면 하루 전체, 칸을 누르면 한 시간씩 — 다시 누르면 빠져요. 숫자 = 되는 사람 수</p>
+    <p class="hint" style="margin:4px 0 0">날짜를 누르면 하루 전체, 칸을 누르면 한 시간씩 후보에 — 다시 누르면 빠져요. 숫자 = 되는 사람 수 · <b>검정 = 📌 확정</b> · 점선 = 후보</p>
     <div class="grid-wrap" style="margin-top:12px"><div class="grid" id="heat"></div></div>
     </div>
   </div>
@@ -1587,6 +1587,7 @@ function toggleFix(t){
   else { list.push(t); setFixes(list, "📌 " + fmtPick(t) + " 로 정했습니다"); }
 }
 
+let resPastOpen = false;                  // 일정 확정 창 — 지난 날짜 펼침
 function renderResult(){
   const rs = responders(), ds = dates(), hs = allHours();
   const sub = $("#resSub");
@@ -1602,11 +1603,25 @@ function renderResult(){
   g.style.gridTemplateColumns = "58px repeat(" + hs.length + ", minmax(42px, 1fr))";
   g.appendChild(cell("gc hh corner", ""));
   hs.forEach(h => g.appendChild(cell("gc hh", h + "시")));          // '시' 를 붙여 칸의 숫자(사람 수)와 헷갈리지 않게
-  ds.forEach(d => {
-    const mine = pickHours(d), win = hoursFor(d);
+  /* 지난 날짜는 표처럼 한 줄로 접는다 · 📌 확정 = 검정, 후보 = 점선 (2026-10-01 Benny: "지난 일정 접히는 거랑 확정 표시가 안 돼 있네") */
+  const today = todayIso(), past = ds.filter(d => d < today), ahead = ds.filter(d => d >= today);
+  const openPast = resPastOpen || !ahead.length;
+  if (past.length && ahead.length){
+    const t = cell("gc pasttog", openPast ? "◂ 지난 날짜 접기" : "지난 " + past.length + "일 ▸");
+    t.setAttribute("role", "button"); t.tabIndex = 0;
+    t.onclick = () => { resPastOpen = !resPastOpen; renderResult(); };
+    g.appendChild(t);
+  }
+  const fixHours = d => {
+    const s = new Set();
+    shownFixes().forEach(t => { const p = pickParse(t); if (p && p.d === d) for (let h = p.from; h < p.to; h++) s.add(h); });
+    return s;
+  };
+  (openPast ? ds : ahead).forEach(d => {
+    const mine = pickHours(d), win = hoursFor(d), fx = fixHours(d);
     const dayFull = win.length && win.every(h => mine.has(h));
-    const dc = cell("gc dh" + (dObj(d).getDay() === 0 ? " sun" : "") + (dayFull ? " on" : ""), "");
-    dc.innerHTML = '<span>' + fmtD(d) + '</span><span class="dow">' + fmtDow(d) + "</span>";
+    const dc = cell("gc dh" + (dObj(d).getDay() === 0 ? " sun" : "") + (dayFull ? " on" : "") + (d < today ? " past" : ""), "");
+    dc.innerHTML = '<span>' + (fx.size ? "📌" : "") + fmtD(d) + '</span><span class="dow">' + fmtDow(d) + "</span>";
     dc.title = fmtFull(d) + " 하루 전체 담기/빼기";
     dc.onclick = () => tapDay(d);
     g.appendChild(dc);
@@ -1616,9 +1631,10 @@ function renderResult(){
          → 진한 초록 = **전원** 되는 칸뿐, 나머지는 아주 옅게, 0명은 빈칸. 고른 칸 = 검정 바탕 흰 숫자 */
       const n = availAt(d,h).length;
       const all = n && n === rs.length;
-      const c = cell("gc hcell" + (n ? "" : " z") + (all ? " full" : ""), n ? String(n) : "");
+      const c = cell("gc hcell" + (n ? "" : " z") + (all ? " full" : "") + (d < today ? " past" : ""), n ? String(n) : "");
       if (n && !all && rs.length) c.style.background = "rgba(var(--accent-rgb)," + (0.05 + 0.20 * (n / rs.length)).toFixed(3) + ")";
-      if (mine.has(h)){ c.classList.add("inpick"); c.style.background = ""; }
+      if (fx.has(h)){ c.classList.add("infix"); c.style.background = ""; c.title = "📌 확정"; }
+      else if (mine.has(h)){ c.classList.add("inpick"); c.style.background = ""; c.title = "후보"; }
       c.onclick = () => tapHour(d, h);
       g.appendChild(c);
     });
