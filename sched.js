@@ -23,7 +23,7 @@ const SCHED_HTML = {
       <p class="hint" id="whoHint"></p>
       <div class="chips" id="whoChips"></div>
       <div class="row" id="whoAddRow" style="margin-top:10px" hidden>
-        <input type="text" id="whoInput" maxlength="30" placeholder="이름" style="flex:1 1 150px">
+        <input type="text" id="whoInput" maxlength="12" placeholder="이름" style="flex:1 1 150px">
         <button class="btn primary" id="whoGo" type="button">시작</button>
         <button class="btn ghost" id="whoCancel" type="button" hidden>취소</button>
       </div>
@@ -106,7 +106,7 @@ const SCHED_HTML = {
           <div class="tbar-wrap"><div class="tbar" id="dmHours"></div></div>
           <button class="dm-multi" id="dmMulti" type="button">＋ 여러 구간 넣기</button>
         </div>
-        <input type="text" id="dmInput" maxlength="200" placeholder="이유 (선택)" aria-label="이유 (선택)">
+        <input type="text" id="dmInput" maxlength="40" placeholder="이유 (선택)" aria-label="이유 (선택)">
         <button class="btn primary wide" id="dmSave" type="button">저장</button>
       </div>
     </div>
@@ -207,7 +207,7 @@ const SCHED_HTML = {
     </div>
     <p class="hint" id="fmHint" style="margin:4px 0 12px"></p>
     <div class="row nowrap">
-      <input type="text" id="fmInput" maxlength="30" placeholder="이름을 적고 엔터" style="flex:1 1 auto">
+      <input type="text" id="fmInput" maxlength="12" placeholder="이름을 적고 엔터" style="flex:1 1 auto">
       <button class="btn soft" id="fmAdd" type="button" style="flex:0 0 auto">＋</button>
     </div>
     <div class="chips" id="fmChips" style="margin-top:12px"></div>
@@ -336,12 +336,13 @@ function cleanFixNotes(v){
   const out = {};
   if (!o || typeof o !== "object" || Array.isArray(o)) return out;
   Object.keys(o).sort().forEach(k => {
-    const t = String(o[k] == null ? "" : o[k]).replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
+    const t = String(o[k] == null ? "" : o[k]).replace(/\s+/g, " ").trim().slice(0, 30);   // 읽을 땐 옛 길이(30)까지
     if (t && /^\d{4}-\d{2}-\d{2}/.test(k) && k.length <= 40 && Object.keys(out).length < 20) out[k] = t;
   });
   return out;
 }
-const FIXNOTE_MAX = 30;
+/* 📌 '무슨 일정' 은 입력 12자 — 표 날짜 머리에 7자 남짓 보인다 (2026-10-02 Benny: 글자 수 기준) */
+const FIXNOTE_MAX = 12;
 function offList(){ return (meet() && meet().off) || []; }
 function isOff(n){ return !!n && offList().includes(n); }
 /** 이름 비교용 열쇠 — 앞뒤·연속 공백과 대소문자를 무시 (같은 이름 막기) */

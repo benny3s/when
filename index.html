@@ -19,7 +19,7 @@
 <meta property="og:image" content="https://benny3s.github.io/when/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<link rel="stylesheet" href="ui.css?v=2026-10-02d">
+<link rel="stylesheet" href="ui.css?v=2026-10-02g">
 </head>
 <body>
 <div class="wrap">
@@ -55,11 +55,11 @@
     <h2 style="margin:0 0 4px">새 약속 만들기</h2>
     <p class="hint" style="margin:0 0 4px">만들고 나온 링크를 단톡방에 보내면 끝이에요.</p>
     <div class="fld"><span>약속 이름</span>
-      <input type="text" id="n_title" maxlength="60" placeholder="예: 10월 저녁 모임">
+      <input type="text" id="n_title" maxlength="20" placeholder="예: 10월 저녁 모임">
       <p class="fldmsg" id="n_titleMsg" hidden></p>
     </div>
     <label class="fld"><span>내 이름</span>
-      <input type="text" id="n_who" maxlength="30" placeholder="예: 베니"></label>
+      <input type="text" id="n_who" maxlength="12" placeholder="예: 베니"></label>
 
     <div class="fld"><span>후보 날짜</span>
       <button class="btn soft wide" id="n_calBtn" type="button">📅 날짜 고르기</button>
@@ -69,11 +69,11 @@
     <details class="nmore" id="n_more">
       <summary>＋ 더 정하기 <span>장소 · 같이 할 사람 · 시간대</span></summary>
       <label class="fld"><span>장소</span>
-        <input type="text" id="n_place" maxlength="60" placeholder="예: 합정 / 미정"></label>
+        <input type="text" id="n_place" maxlength="30" placeholder="예: 합정 / 미정"></label>
 
       <div class="fld"><span>같이 할 사람</span>
         <div class="row nowrap">
-          <input type="text" id="n_mem" maxlength="30" placeholder="이름을 적고 엔터" style="flex:1 1 auto">
+          <input type="text" id="n_mem" maxlength="12" placeholder="이름을 적고 엔터" style="flex:1 1 auto">
           <button class="btn soft" id="n_memAdd" type="button" style="flex:0 0 auto">＋</button>
         </div>
         <div class="chips" id="n_memChips" style="margin-top:9px"></div>
@@ -169,8 +169,8 @@
       <button class="btn ghost" type="button" data-close>닫기</button>
     </div>
     <button class="btn soft wide" id="s_dates" type="button" style="margin:10px 0 4px">📅 후보 날짜 · 시간대 고르기</button>
-    <label class="fld"><span>약속 이름</span><input type="text" id="s_title" maxlength="60"></label>
-    <label class="fld"><span>장소</span><input type="text" id="s_place" maxlength="60"></label>
+    <label class="fld"><span>약속 이름</span><input type="text" id="s_title" maxlength="20"></label>
+    <label class="fld"><span>장소</span><input type="text" id="s_place" maxlength="30"></label>
     <label class="fld"><span>메모</span><input type="text" id="s_memo" maxlength="200" placeholder="예: 저녁 먹고 2차까지"></label>
     <label class="fld"><span>정해진 시간 — 비우면 '아직 정하는 중'</span>
       <input type="text" id="s_fixed" maxlength="400" placeholder="예: 2026-10-02 18:00~21:00"></label>
@@ -181,7 +181,7 @@
     <h3 class="subh" style="margin-top:22px">참여자</h3>
     <div id="memberList" class="list"></div>
     <div class="row" style="margin-top:10px">
-      <input type="text" id="memberInput" maxlength="30" placeholder="이름" style="flex:1 1 150px">
+      <input type="text" id="memberInput" maxlength="12" placeholder="이름" style="flex:1 1 150px">
       <button class="btn" id="memberAdd" type="button">추가</button>
     </div>
 
@@ -200,15 +200,15 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="core.js?v=2026-10-02d"></script>
-<script src="sched.js?v=2026-10-02d"></script>
+<script src="core.js?v=2026-10-02g"></script>
+<script src="sched.js?v=2026-10-02g"></script>
 <script>/* 약속 잡자 — benny3s.github.io/when/  (옛 주소 /meet/ 는 여기로 넘겨준다, 2026-09-28)
    약속 하나 = 링크 하나(?m=<id>).
    이 페이지는 '껍데기'다 — 새 약속 만들기 · 약속 목록 · ?admin · 약속 카드 · 약속 설정.
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-02d";
+const BUILD = "2026-10-02g";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
