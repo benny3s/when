@@ -671,7 +671,9 @@ function renderWho(){
 
   /* 이 시간표에서 뺀 사람도 '누구세요' 에는 흐리게 남긴다 — 이름(로그인)은 밴드 단위라서
      (2026-10-01 Benny: "캘린더에서 멤버 뺐는데, 멤버 로그인도 사라져버렸어") */
-  const mem = members().concat(offList().filter(n => !members().includes(n)));
+  /* 페이지가 명단을 주면 그걸로 (밴드매니저: 밴드 멤버 — 합주곡·이력 탭에서도 같은 카드를 쓴다) */
+  const mem = typeof whoMembers === "function" ? whoMembers()
+            : members().concat(offList().filter(n => !members().includes(n)));
   const box = $("#whoChips"); box.innerHTML = "";
   mem.forEach(n => {
     const b = document.createElement("button");
@@ -741,6 +743,7 @@ function pickMe(n){
   try { localStorage.setItem("meet_lastname", n); } catch(e){}
   saveMe(n);
   $("#whoInput").value = "";
+  if (!M){ renderAll(); return; }                   // 시간표가 없을 때(밴드매니저 합주곡·이력) — 이름만 고른다
   if (isOff(n)){                                    // 이 시간표에서 뺀 사람 — 다시 만들지 않고 이름만 고른다
     loadMine(true); renderAll();
     setStatus(n + " 님은 이 시간표에 참여하지 않아요 — ⚙ 설정의 멤버에서 켤 수 있어요");
@@ -1768,9 +1771,7 @@ $("#dmClose").onclick   = () => closeDay();
 /* 내 입력 창의 ⚙(이 날 설정)은 뺐다 — 날짜 머리를 누르면 같은 설정이 열린다 (2026-09-30 Benny: "중복 기능") */
 /** 이름 없이 입력하려 할 때 — 창을 닫고 '누구세요' 를 펼친다 */
 function askName(){
-  closeDay();
-  if (typeof onAskName === "function"){ onAskName(); return; }   // 밴드매니저: 누구세요가 페이지 쪽에 있다
-  whoOpen = true; whoAdd = false; renderWho();
+  closeDay(); whoOpen = true; whoAdd = false; renderWho();
   $("#whoCard").scrollIntoView({ behavior:"smooth", block:"center" });
   setTimeout(() => { if (!$("#whoAddRow").hidden) $("#whoInput").focus(); }, 300);
 }
