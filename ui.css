@@ -669,3 +669,18 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .hcell.infix,.hcell.full.infix{background:var(--ink);color:#fff;opacity:1}
 .grid .gc.past{opacity:.45}
 .grid .gc.pasttog{grid-column:1/-1;text-align:left;justify-content:flex-start;padding:8px 10px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;background:var(--soft)}
+/* 일정 확정 창 — 가로 날짜·세로 시간, 확정 덩어리 첫 칸 = 무슨 일정, 이어 붙은 확정은 흰 줄로 끊기 (2026-10-01) */
+.resinfo{margin:8px 0 0;font-size:13px;font-weight:700;color:var(--muted);min-height:1.4em}
+.resinfo.go{color:var(--accent)} .resinfo.fix{color:var(--ink)}
+.hcell.infix.fxTop{box-shadow:inset 0 3px 0 var(--card)}
+.hcell.inpick.pkTop{box-shadow:inset 0 3px 0 var(--card)}
+.hcell.fxLabel{display:block;font-size:10.5px;font-weight:800;line-height:30px;padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcell.pend{outline:2.5px solid var(--accent);outline-offset:-3px;background:rgba(var(--accent-rgb),.18)}
+.grid .gc.pastcolv{flex-direction:column;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;background:var(--soft);word-break:keep-all;padding:6px 2px}
+/* 아래 목록 — 추가된 일정 / 📌 확정된 일정 · 지난 건 접기 */
+.picks .ph .ptog{margin-left:auto;appearance:none;border:0;background:transparent;font:inherit;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer}
+.picks .psec{font-size:12px;font-weight:800;color:var(--muted);margin:12px 2px 6px}
+.prow .pt input{margin-top:6px;min-height:34px;padding:5px 10px;font-size:13.5px;width:100%}
+.prow .pt .psrc{font-weight:600;color:var(--muted);font-size:11px}
+.prow.past{opacity:.55}
+.prow.lock .btn{opacity:.4}
