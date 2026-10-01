@@ -688,3 +688,9 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .dowh-row{margin-top:6px}
 .dowh-row .dw{display:inline-block;width:26px;font-weight:800}
 .dowh-row .dw.sun{color:var(--warn)} .dowh-row .dw.sat{color:#2f6fb5}
+/* 폰(좁은 화면)에서 '달력 보기 · 모두 보기 · 📅 날짜 관리' 가 한 줄에 들어가게 (2026-10-02 — 샘플 캡쳐 만들다 발견) */
+@media (max-width:420px){
+  .seg-row{flex-wrap:nowrap}
+  .seg-row .seg .segb{padding:7px 9px;font-size:13px}
+  .seg-row #segFix{padding:7px 10px;font-size:13px}
+}
