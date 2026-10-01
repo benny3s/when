@@ -42,8 +42,8 @@ const SCHED_HTML = {
   <!-- 표 -->
   <div class="card" id="sheetCard">
     <div class="seg" id="viewSeg" role="tablist">
-      <!-- 달력 = 내 입력 전용, 표 = 모두의 응답 (2026-10-01 Benny: "달력/표 라는 단어가 어색해") -->
-      <button class="segb" id="segCal" type="button" role="tab">📅 내 입력</button>
+      <!-- 달력 = 칸을 누르면 내 입력, 표 = 모두의 응답 (2026-10-01 Benny: "'내 입력' 대신 '달력 보기'") -->
+      <button class="segb" id="segCal" type="button" role="tab">📅 달력 보기</button>
       <button class="segb" id="segTab" type="button" role="tab">👥 모두 보기</button>
     </div>
     <p class="hint" id="sheetHint" style="margin:0 0 10px"></p>
@@ -106,11 +106,12 @@ const SCHED_HTML = {
       <div id="dmDay"></div>
       <!-- 📌 정하기 — 막대에서 시작·끝을 누르고, 코멘트는 선택 (2026-10-01 Benny: "17-20 합주 / 20-22 청모") -->
       <div class="dm-fix" id="dmFixBox">
-        <div id="dmFixList"></div>
+        <p class="dm-hint fxst" id="dmFixState"></p>
         <div class="dm-fixadd">
-          <input type="text" id="dmFixNote" maxlength="30" placeholder="코멘트 (선택) — 예: 합주" aria-label="코멘트 (선택)">
+          <input type="text" id="dmFixNote" maxlength="30" placeholder="무슨 일정? (선택)" aria-label="무슨 일정인지 (선택)">
           <button class="btn dark" id="dmFix" type="button">📌 정하기</button>
         </div>
+        <div id="dmFixList"></div>
       </div>
       <div id="dmPeople"></div>
       <details class="dm-more">
@@ -823,7 +824,14 @@ function renderCalView(){
       fx.textContent = ft[0] + (ft.length > 1 ? " +" + (ft.length - 1) : "");
       b.appendChild(fx);
     }
-    b.title = fmtFull(d) + " · " + (ft.length ? "📌 " + fixedLabels(d).map(fixLabelTxt).join(", ") : winLabel(d));
+    /* 달력 보기는 칸이 크니 **되는 사람 수**도 (○+△) — 2026-10-01 Benny: "'달력 보기' 로, 화면이 크니까 좀 더" */
+    const can = members().filter(n => { const h = (hoursOf()[n] || {})[d]; return Array.isArray(h) && h.length; }).length;
+    if (members().length){
+      const c = document.createElement("span"); c.className = "cnt"; c.textContent = can + "명";
+      c.title = "되는 사람 " + can + " / " + members().length + "명";
+      b.appendChild(c);
+    }
+    b.title = fmtFull(d) + " · " + (ft.length ? "📌 " + fixedLabels(d).map(fixLabelTxt).join(", ") : winLabel(d)) + " · 되는 사람 " + can + "/" + members().length + "명";
     b.onclick = () => { if (!me){ askName(); return; } openDay(d, "edit"); };
     return b;
   };
@@ -888,20 +896,12 @@ function drawSheet(){
     const bo = document.createElement("b"); bo.textContent = "참여하지 않아요";
     hint.append(bo, document.createTextNode(" — 입력할 칸이 없습니다. (⚙ 설정 → 멤버에서 켤 수 있어요)"));
   } else {
-    /* 안내는 **한 줄** — 남은 날만. 넣는 방법은 '가이드' 를 눌러야 팝업으로
-       (2026-10-01 Benny: "정보가 여전히 많아 — '이렇게 넣어주세요' 를 가이드로 심플하게, 누르면 팝업") */
-    const todo = me ? (ahead.length ? ahead : ds).filter(d => !myAnswered(d)) : [];   // 지난 날은 안 채워도 된다
-    hint.classList.add("one");
-    const msg = document.createElement("span"); msg.className = "g-msg";
-    if (!me) msg.innerHTML = "위 <b>누구세요?</b>에서 내 이름을 먼저 골라주세요";
-    else if (!todo.length){ hint.classList.add("done"); msg.innerHTML = "<b>✅ 다 넣었어요!</b> 칸을 누르면 고칠 수 있어요"; }
-    else {
-      const b = document.createElement("b"); b.textContent = "남은 날 " + todo.length + "일";
-      msg.append(b, " — " + todo.slice(0, 3).map(fmtD).join(", ") + (todo.length > 3 ? " …" : ""));
-    }
-    const gb = document.createElement("button"); gb.type = "button"; gb.className = "g-btn"; gb.textContent = "📝 가이드";
+    /* 안내는 **가이드 버튼 하나**, 맨 왼쪽 — 넣는 방법은 누르면 팝업으로
+       (2026-10-01 Benny: "가이드가 잘 안 보여, 남은 날 이런 거 빼고 가이드를 맨 왼쪽으로") */
+    hint.className = "g-row";
+    const gb = document.createElement("button"); gb.type = "button"; gb.className = "g-btn"; gb.textContent = "📝 입력 가이드";
     gb.onclick = () => openModal("guideModal");
-    hint.append(msg, gb);
+    hint.append(gb);
   }
 
   /* ⚠️ 입력 표에는 '제일 많음' 추천을 **넣지 않는다**
@@ -1136,31 +1136,33 @@ function renderDayInfo(d){
      막대를 누르면 📌 정할 시간을 고른다 — 시작 칸, 끝 칸 (내 입력의 △ 와 같은 방식) */
   if (hs.length && tot){
     const cnt = hs.map(h => availAt(d, h).length), best = Math.max.apply(null, cnt);
+    /* (2026-10-01 Benny: "시간을 강조하고 사람 수는 덜 — 헤더를 시간으로, 바로 밑에 몇 명, 바로 밑에 이유.
+        확정된 일정은 검정 네모") → 위 줄 = 시각(굵게), 아래 칸 = 되는 사람 수(작게·옅게), 📌 = 검정 테두리 */
     const cap = document.createElement("div"); cap.className = "dy-cap";
-    const cl = document.createElement("span"); cl.textContent = "시간별 되는 사람 (명)";
+    const cl = document.createElement("span"); cl.textContent = "칸 숫자 = 되는 사람 (전체 " + tot + "명)";
     const cr = document.createElement("span"); cr.className = "dy-best";
     if (best > 0){
       const b = document.createElement("b"); b.textContent = runsOf(hs.filter((h, i) => cnt[i] === best), true) + "시";
-      cr.append("최다 ", b, " " + best + "/" + tot + "명" + (best === tot ? " 🎉" : ""));
-    } else cr.textContent = "아직 되는 사람이 없어요";
+      cr.append("최다 ", b, " " + best + "명" + (best === tot ? " 🎉" : ""));
+    }
     cap.append(cl, cr); box.appendChild(cap);
+    /* 📌 정한 시간(이력 '예정' 포함)을 칸마다 — 붙은 칸은 한 네모로 (바깥 선만) */
+    const fixRanges = fixedLabels(d).map(x => pickParse(x.t)).filter(Boolean);
+    const inFix = h => fixRanges.find(r => h >= r.from && h < r.to);
     const strip = document.createElement("div"); strip.className = "dy-strip";
     hs.forEach((h, i) => {
       const n = cnt[i];
       const col = document.createElement("button"); col.type = "button"; col.className = "dy-h";
       if (fxA !== null && h >= fxA && h <= fxZ) col.classList.add("sel");
       if (fxFrom === h) col.classList.add("from");
-      const num = document.createElement("span"); num.className = "dy-n"; num.textContent = n ? String(n) : "";
-      const well = document.createElement("span"); well.className = "dy-w";
-      const bar = document.createElement("span");
-      bar.className = "dy-b" + (n && n === tot ? " full" : "");
-      bar.style.height = n ? Math.max(10, Math.round(100 * n / tot)) + "%" : "0";
-      well.appendChild(bar);
-      const lab = document.createElement("span"); lab.className = "dy-l";
-      lab.textContent = h + (i === 0 ? "시" : "");
-      col.append(num, well, lab);
-      if (i === hs.length - 1){ const e = document.createElement("span"); e.className = "dy-l end"; e.textContent = (h + 1) + "시"; col.appendChild(e); }
-      col.title = h + "–" + (h + 1) + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "");
+      const tm = document.createElement("span"); tm.className = "dy-tm"; tm.textContent = String(h) + (i === 0 ? "시" : "");
+      const c = document.createElement("span");
+      const r = inFix(h);
+      c.className = "dy-c" + (n && n === tot ? " full" : "") + (r ? " fix" + (h === r.from ? " fixL" : "") + (h === r.to - 1 ? " fixR" : "") : "");
+      if (n && n !== tot) c.style.background = "rgba(var(--accent-rgb)," + (0.05 + 0.25 * (n / tot)).toFixed(3) + ")";
+      c.textContent = n ? String(n) : "·";
+      col.append(tm, c);
+      col.title = h + "–" + (h + 1) + "시 · " + n + "명" + (n ? " — " + availAt(d, h).join(", ") : "") + (r ? " · 📌 정함" : "");
       col.setAttribute("aria-label", h + "시부터 한 시간 · " + n + "명");
       col.onclick = () => {
         if (fxFrom === null){ fxFrom = h; fxA = fxZ = h; }
@@ -1190,16 +1192,25 @@ function renderDayInfo(d){
   });
   pbox.appendChild(list);
 }
-/** 📌 — 그 날 정한 것 목록(코멘트 고치기·취소) + 새로 정하기 */
+/** 📌 — 고른 시간 안내 + (입력칸·정하기 버튼은 HTML) + 그 날 정한 것 목록(코멘트 고치기·취소) */
 function renderFixBox(d){
+  const st = $("#dmFixState"), btn = $("#dmFix");
+  st.classList.remove("ok");
+  if (fxFrom !== null){ st.textContent = fxFrom + "시부터 — 끝 시간 칸을 눌러주세요"; btn.disabled = true; }
+  else if (fxA !== null){
+    const t = pickTxt(d, fxA, fxZ + 1), who = pickWho(t).length;
+    const dup = fixes().indexOf(t) >= 0;
+    st.textContent = fxA + "–" + (fxZ + 1) + "시 · " + who + "명 내내 가능" + (dup ? " · 이미 정했어요" : "");
+    st.classList.add("ok"); btn.disabled = dup;
+  } else { st.textContent = "위 시간 칸에서 시작·끝을 눌러 고르세요"; btn.disabled = true; }
   const lb = $("#dmFixList"); lb.innerHTML = "";
   fixedLabels(d).forEach(x => {
     const own = fixes().indexOf(x.t) >= 0;           // 이력에만 있는 '예정' 합주는 여기서 못 지운다
     const r = document.createElement("div"); r.className = "fxrow";
     const tm = document.createElement("b"); tm.textContent = "📌 " + x.time;
     const inp = document.createElement("input");
-    inp.type = "text"; inp.maxLength = FIXNOTE_MAX; inp.value = x.note; inp.placeholder = "코멘트 (선택)";
-    inp.setAttribute("aria-label", x.time + " 코멘트");
+    inp.type = "text"; inp.maxLength = FIXNOTE_MAX; inp.value = x.note; inp.placeholder = "무슨 일정? (선택)";
+    inp.setAttribute("aria-label", x.time + " 무슨 일정인지");
     inp.addEventListener("change", () => { setFixNote(x.t, inp.value); renderDm(); });
     inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); inp.blur(); } });
     r.append(tm, inp);
@@ -1215,16 +1226,6 @@ function renderFixBox(d){
     }
     lb.appendChild(r);
   });
-  const st = document.createElement("p"); st.className = "dm-hint fxst";
-  const btn = $("#dmFix");
-  if (fxFrom !== null){ st.textContent = fxFrom + "시부터 — 끝 시간 막대를 눌러주세요"; btn.disabled = true; }
-  else if (fxA !== null){
-    const t = pickTxt(d, fxA, fxZ + 1), who = pickWho(t).length;
-    const dup = fixes().indexOf(t) >= 0;
-    st.textContent = fxA + "–" + (fxZ + 1) + "시 · " + who + "/" + members().length + "명 내내 가능" + (dup ? " · 이미 정했어요" : "");
-    st.classList.add("ok"); btn.disabled = dup;
-  } else { st.textContent = "위 막대에서 시작·끝을 눌러 시간을 고르세요"; btn.disabled = true; }
-  lb.appendChild(st);
 }
 function renderDm(){
   const d = dmDate; if (!d) return;

@@ -570,25 +570,22 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .dy-pill.all{color:var(--accent);border-color:rgba(var(--accent-rgb),.45)}
 .dy-pill.part{color:var(--amber);border-color:rgba(138,109,31,.4)}
 .dy-pill.no{color:var(--warn);border-color:rgba(180,71,47,.35)}
-/* 시간별 인원 = 막대그래프 — 높이 = 사람 수(막대 위 숫자), 아래 눈금 = 시각(칸 경계) (2026-10-01) */
-.dy-cap{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 4px;font-size:12px;color:var(--muted);font-weight:700}
-.dy-best{font-weight:500}
+/* 시간별 — 위 = 시각(굵게), 아래 칸 = 되는 사람 수(작게), 📌 정한 시간 = 검정 네모 (2026-10-01) */
+.dy-cap{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 4px;font-size:11.5px;color:var(--muted)}
 .dy-best b{color:var(--ink)}
-.dy-strip{display:flex;overflow-x:auto;padding:0 0 2px 10px;margin:0 0 10px}
-.dy-h:last-child{margin-right:14px}   /* 끝 눈금('22시')이 넘쳐 가로 스크롤이 생기지 않게 */
-.dy-h{flex:1 0 22px;min-width:0;position:relative;display:flex;flex-direction:column;align-items:stretch;
-  appearance:none;border:0;background:transparent;padding:0 1px;font:inherit;color:inherit;cursor:pointer;border-radius:6px 6px 0 0}
-.dy-h.sel{background:rgba(var(--accent-rgb),.13)}
-.dy-h.from{background:rgba(var(--accent-rgb),.22)}
-.dy-n{height:15px;font-size:11px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
-.dy-w{height:46px;display:flex;align-items:flex-end;border-bottom:1.5px solid var(--line)}
-.dy-b{display:block;width:100%;border-radius:4px 4px 0 0;background:rgba(var(--accent-rgb),.38)}
-.dy-b.full{background:var(--accent)}
-.dy-h.sel .dy-b{box-shadow:inset 0 0 0 1.5px var(--ink)}
-.dy-h.sel .dy-w{border-bottom-color:var(--ink)}
-.dy-l{display:block;height:16px;padding-top:2px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;
-  white-space:nowrap;transform:translateX(-50%);text-align:left;width:0;overflow:visible}
-.dy-l.end{position:absolute;right:0;bottom:0;transform:translateX(50%)}
+.dy-strip{display:flex;overflow-x:auto;margin:0 0 8px;padding:2px 0 3px}
+.dy-h{flex:1 0 22px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:3px;
+  appearance:none;border:0;background:transparent;padding:0;font:inherit;color:inherit;cursor:pointer}
+.dy-tm{font-size:13px;font-weight:800;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;border-radius:6px}
+.dy-c{height:26px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:500;color:var(--muted);
+  font-variant-numeric:tabular-nums;background:var(--card);border-right:1px solid var(--card);position:relative}
+.dy-c.full{background:rgba(var(--accent-rgb),.42);color:var(--ink);font-weight:700}
+.dy-c.fix{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink)}
+.dy-c.fix.fixL{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink),inset 2px 0 0 var(--ink)}
+.dy-c.fix.fixR{box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink),inset -2px 0 0 var(--ink)}
+.dy-c.fix.fixL.fixR{box-shadow:inset 0 0 0 2px var(--ink)}
+.dy-h.sel .dy-tm{background:var(--accent);color:var(--on-accent)}
+.dy-h.from .dy-tm{background:rgba(var(--accent-rgb),.35);color:var(--ink)}
 /* 📌 정하기 — 정한 것 목록 + 새로 정하기 */
 .dm-fix{border:1px solid rgba(var(--accent-rgb),.28);background:rgba(var(--accent-rgb),.04);border-radius:12px;padding:10px;margin:0 0 12px}
 .fxrow{display:flex;align-items:center;gap:8px;margin:0 0 6px}
@@ -596,7 +593,8 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .fxrow input{flex:1 1 auto;min-width:0;min-height:36px;padding:6px 10px;font-size:14px}
 .fxrow .btn.x{flex:0 0 auto;width:36px;min-height:36px;padding:0;color:var(--muted)}
 .fxrow .fxtag{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
-.dm-fix .fxst{margin:2px 0 8px;font-size:12.5px}
+.dm-fix .fxst{margin:0 0 6px;font-size:12.5px}
+.dm-fix #dmFixList:not(:empty){margin-top:10px;padding-top:8px;border-top:1px solid rgba(var(--accent-rgb),.2)}
 .dm-fixadd{display:flex;gap:8px}
 .dm-fixadd input{flex:1 1 auto;min-width:0}
 .dm-fixadd .btn{flex:0 0 auto}
@@ -621,10 +619,10 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .modal#dayModal{align-items:flex-start;padding-top:max(12px,9vh)}
 
 /* 표 위 안내 한 줄 + 가이드 버튼 (2026-10-01) */
-.callout.one{display:flex;align-items:center;gap:10px;padding:9px 12px}
-.callout.one .g-msg{flex:1 1 auto;min-width:0;font-size:13px}
-.callout.one .g-btn{flex:0 0 auto;appearance:none;border:1px solid rgba(var(--accent-rgb),.4);background:var(--card);color:var(--accent);
-  font:inherit;font-size:12.5px;font-weight:700;border-radius:999px;padding:5px 11px;cursor:pointer}
+.g-row{display:flex;justify-content:flex-start;margin:0 0 10px}
+.g-row .g-btn{appearance:none;border:1.5px solid var(--accent);background:rgba(var(--accent-rgb),.08);color:var(--accent);
+  font:inherit;font-size:13.5px;font-weight:800;border-radius:999px;padding:7px 14px;cursor:pointer}
+.g-row .g-btn:active{background:rgba(var(--accent-rgb),.18)}
 #guideModal .guide{margin:12px 0 0;padding-left:20px;font-size:14px;line-height:1.7}
 /* 내 입력 달력 — 7칸 달력, 칸은 세로로 길게 (2026-10-01) */
 .cal.cv{gap:4px}
@@ -637,3 +635,4 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .cal.cv .d .mk{font-size:19px;margin-top:2px}
 .cal.cv .d .fx{font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .cal.cv .cvmon{margin-top:10px}
+.cal.cv .d .cnt{margin-top:auto;font-size:9.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
