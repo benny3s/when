@@ -788,6 +788,7 @@ function renderSheetArea(){
   $("#calView").hidden = !cal;
   $("#tabOuter").hidden = cal;
   if (cal) renderCalView();
+  requestAnimationFrame(hsUpdate);                       // 표가 다시 그려지면 좌우 넘기기 버튼도 (크기는 그린 뒤에 잰다)
 }
 /* 달력은 **한 장** — 후보 날짜가 있는 주만 이어 붙인다. 달 넘기기(‹ ›)는 없다
    (2026-09-28 Benny: "1개 월만 보여서 2개 월로 선택지가 되면 보기 힘들 것 같기도, 심플하면서 좋은 방법")
@@ -872,7 +873,7 @@ function renderCalView(){
 /** 표와 달력을 **같이** 다시 그린다.
     ⚠️ `drawSheet()` 만 부르면 달력 보기에서는 화면이 그대로다
     (2026-09-22o Benny: "가능으로 입력했는데 화면이 안바뀌어") */
-function paintSheet(){ drawSheet(); renderSheetArea(); hsUpdate(); }
+function paintSheet(){ drawSheet(); renderSheetArea(); }
 /** 표 좌우 넘기기 버튼 — 넘길 게 있을 때만, 끝에 닿은 쪽은 숨긴다. 왼쪽 버튼은 이름 칸 바로 옆에 */
 function hsUpdate(){
   const w = $("#tabView"), o = $("#tabOuter"); if (!w || !o) return;
@@ -1075,6 +1076,16 @@ function fixedLabels(d){
 /** 맨 위 '📌 … 로 정했습니다' 줄 — 코멘트까지 ("10/11(일) 17:00~20:00 합주, …") */
 function fmtFixedNotes(v){
   return String(v || "").split(/\s*,\s*/).filter(Boolean).map(t => fmtFixed(t) + (fixNoteOf(t) ? " " + fixNoteOf(t) : "")).join(", ");
+}
+/** 맨 위 📌 한 줄 — 둘까지는 전부, 많으면 **다음 정한 날만** + 정한 날 수
+    (2026-10-01: 키니피처럼 12개면 줄이 길어져서) */
+function fixedLine(v){
+  const list = String(v || "").split(/\s*,\s*/).filter(Boolean);
+  if (list.length <= 2) return "📌 " + fmtFixedNotes(v) + " 로 정했습니다";
+  const days = Array.from(new Set(list.map(t => t.slice(0, 10)))).sort(), today = todayIso();
+  const d = days.find(x => x >= today) || days[days.length - 1];
+  const lb = fixedLabels(d).map(fixLabelTxt).join(", ");
+  return "📌 " + (d >= today ? "다음 " : "마지막 ") + fmtFull(d) + (lb ? " " + lb : "") + " · 정한 날 " + days.length + "일";
 }
 function fixLabelTxt(x){ return x.time + (x.note ? " " + x.note : ""); }
 /** "2026-09-21 18:00~20:00" → "9/21(월) 18:00~20:00" (저장 값은 그대로 둔다) */
@@ -1757,7 +1768,9 @@ $("#dmClose").onclick   = () => closeDay();
 /* 내 입력 창의 ⚙(이 날 설정)은 뺐다 — 날짜 머리를 누르면 같은 설정이 열린다 (2026-09-30 Benny: "중복 기능") */
 /** 이름 없이 입력하려 할 때 — 창을 닫고 '누구세요' 를 펼친다 */
 function askName(){
-  closeDay(); whoOpen = true; whoAdd = false; renderWho();
+  closeDay();
+  if (typeof onAskName === "function"){ onAskName(); return; }   // 밴드매니저: 누구세요가 페이지 쪽에 있다
+  whoOpen = true; whoAdd = false; renderWho();
   $("#whoCard").scrollIntoView({ behavior:"smooth", block:"center" });
   setTimeout(() => { if (!$("#whoAddRow").hidden) $("#whoInput").focus(); }, 300);
 }
