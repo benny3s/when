@@ -1715,7 +1715,7 @@ function renderPicks(){
 function pickRow(x, today){
   const row = document.createElement("div"); row.className = "prow" + (x.on ? " fixed" : "") + (x.d < today ? " past" : "") + (x.lock ? " lock" : "");
   const pt = document.createElement("div"); pt.className = "pt";
-  const tt = document.createElement("b"); tt.textContent = (x.on ? "📌 " : "") + fmtFull(x.d) + " " + x.time + "시";
+  const tt = document.createElement("b"); tt.textContent = (x.on ? "📌 " : "") + fmtFull(x.d) + " " + x.time;   // '시' 는 뺀다 — 좁은 폰에서 한 줄 (표 머리와 같은 표기)
   if (x.ext){ const e = document.createElement("small"); e.className = "psrc"; e.textContent = " · " + (x.src || "이력"); tt.appendChild(e); }
   const who = pickWho(x.t);
   const s2 = document.createElement("span"); s2.className = "ps";

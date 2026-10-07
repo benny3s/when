@@ -19,7 +19,7 @@
 <meta property="og:image" content="https://benny3s.github.io/when/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<link rel="stylesheet" href="ui.css?v=2026-10-02g">
+<link rel="stylesheet" href="ui.css?v=2026-10-07a">
 </head>
 <body>
 <div class="wrap">
@@ -88,6 +88,16 @@
       </div>
     </details>
     <button class="btn primary wide" id="n_make" type="button" style="margin-top:12px">만들기 →</button>
+  </div>
+  <!-- 처음 온 사람에게 샘플 화면 (가짜 '금요 저녁 모임' 데이터로 찍은 것) · 2026-10-07 Benny -->
+  <div class="card samples">
+    <h2 style="margin:0 0 2px">이런 화면이에요</h2>
+    <p class="hint" style="margin:0 0 10px">옆으로 넘겨 보세요 · 샘플 약속 화면</p>
+    <div class="shots">
+      <figure><img src="samples/table.webp" alt="친구마다 되는 날을 ○ △ ✕ 로" loading="lazy" width="600" height="860"><figcaption><b>① 링크만 보내면</b> 친구마다 되는 날 ○ △ ✕</figcaption></figure>
+      <figure><img src="samples/day.webp" alt="날짜를 누르면 시간별로 몇 명 되는지 보고 📌 확정" loading="lazy" width="600" height="860"><figcaption><b>② 날짜를 누르면</b> 몇 명 되는지 보고 📌 확정</figcaption></figure>
+      <figure><img src="samples/result.webp" alt="결과 보기 — 후보와 확정된 일정" loading="lazy" width="600" height="860"><figcaption><b>③ 결과 보기</b> 후보 모아 보고 📌 확정</figcaption></figure>
+    </div>
   </div>
 
 </section>
@@ -200,15 +210,15 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="core.js?v=2026-10-02g"></script>
-<script src="sched.js?v=2026-10-02g"></script>
+<script src="core.js?v=2026-10-07a"></script>
+<script src="sched.js?v=2026-10-07a"></script>
 <script>/* 약속 잡자 — benny3s.github.io/when/  (옛 주소 /meet/ 는 여기로 넘겨준다, 2026-09-28)
    약속 하나 = 링크 하나(?m=<id>).
    이 페이지는 '껍데기'다 — 새 약속 만들기 · 약속 목록 · ?admin · 약속 카드 · 약속 설정.
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-02g";
+const BUILD = "2026-10-07a";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
