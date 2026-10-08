@@ -1296,7 +1296,7 @@ function renderFixBox(d){
   });
 }
 /** 정하기 ↔ 해제. 해제한 건 후보로 남는다 (지우려면 ✕) */
-function fixRowToggle(d, x, note){
+async function fixRowToggle(d, x, note){
   const nt = String(note || "").replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
   const pk = picks();
   if (!x.on){
@@ -1304,16 +1304,16 @@ function fixRowToggle(d, x, note){
     setFixes(fixes().concat([x.t]), "📌 " + fmtPick(x.t) + (nt ? " " + nt : "") + " 확정",
              nt ? { [x.t]: nt } : null, pk.filter(t => t !== x.t));
   } else if (x.ext){
-    if (typeof releaseExtraFix !== "function" || !releaseExtraFix(x.t)) return;   // 이력 '예정' 을 지운다 (묻고)
+    if (typeof releaseExtraFix !== "function" || !await releaseExtraFix(x.t)) return;   // 이력 '예정' 을 지운다 (묻고)
     setFixes(fixes(), fmtPick(x.t) + " 확정 해제 — 후보로 남겼어요", null, pk.concat([x.t]));
   } else {
     setFixes(fixes().filter(t => t !== x.t), fmtPick(x.t) + " 확정 해제 — 후보로 남겼어요", null, pk.concat([x.t]));
   }
   renderDm();
 }
-function fixRowDelete(d, x){
+async function fixRowDelete(d, x){
   if (x.tmp){ fxA = fxZ = null; fxTmpNote = ""; renderDm(); return; }
-  if (x.ext){ if (typeof releaseExtraFix !== "function" || !releaseExtraFix(x.t)) return; }
+  if (x.ext){ if (typeof releaseExtraFix !== "function" || !await releaseExtraFix(x.t)) return; }
   setFixes(fixes().filter(t => t !== x.t), fmtPick(x.t) + " 지웠어요", { [x.t]: "" }, picks().filter(t => t !== x.t));
   renderDm();
 }
@@ -1465,7 +1465,7 @@ async function save(){
   }
   if (!anyVal && hadBefore){
     saving = false;
-    if (!confirm("입력한 " + hadBefore + "일을 전부 '미정' 으로 되돌립니다. 맞나요?")){
+    if (!await ask({ title: "입력을 전부 지울까요?", text: "입력한 " + hadBefore + "일을 전부 '미정' 으로 되돌려요.", ok: "되돌리기", danger: true })){
       loadMine(true); renderAll();
       setStatus("그대로 두었습니다", "ok");
       return;
@@ -1954,9 +1954,9 @@ $("#hsL").onclick = () => hsGo(-1);
 $("#hsR").onclick = () => hsGo(1);
 $("#tabView").addEventListener("scroll", hsUpdate, { passive: true });
 window.addEventListener("resize", hsUpdate);
-$("#dmDrop").onclick = () => {
+$("#dmDrop").onclick = async () => {
   const d = dmDate; if (!d) return;
-  if (!confirm(fmtFull(d) + " 을 후보에서 뺍니다. 계속할까요?")) return;
+  if (!await ask({ title: "후보에서 뺄까요?", text: fmtFull(d) + " — 이 날 넣은 시간·이유는 지워지지 않아요.", ok: "빼기", danger: true })) return;
   const list = dates().filter(x => x !== d);
   act({ action:"meet_set", dates: list.join(",") }, fmtFull(d) + " 뺐습니다", () => { ST.dates = list.slice(); });
   closeDay();
@@ -1971,9 +1971,9 @@ $("#calPrev").onclick = () => { calM--; if (calM < 0){ calM = 11; calY--; } rend
 $("#calNext").onclick = () => { calM++; if (calM > 11){ calM = 0; calY++; } renderCal(); };
 $("#calToday").onclick = () => { const o = new Date(); calY = o.getFullYear(); calM = o.getMonth(); renderCal(); };
 $$("#dowRow button").forEach(b => b.onclick = () => toggleDow(+b.dataset.dow));
-$("#calClear").onclick = () => {
+$("#calClear").onclick = async () => {
   if (!dsel.size) return;
-  if (!confirm("고른 날짜를 전부 지웁니다. 계속할까요?")) return;
+  if (!await ask({ title: "고른 날짜를 전부 지울까요?", ok: "전부 지우기", danger: true })) return;
   dsel.clear(); renderCal(); dateChanged();
 };
 const hourApply = () => {

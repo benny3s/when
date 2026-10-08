@@ -15,6 +15,20 @@ const CORE_HTML = `<!-- ══════════ 시간 고르기 (작은 
     <p class="hint" style="margin:10px 0 0">바깥을 누르면 그대로 닫힙니다.</p>
   </div>
 </div>
+<!-- ══════════ 확인·입력 창 — 브라우저 confirm/prompt 대신 (2026-10-08)
+     카톡 같은 앱 안 브라우저는 confirm/prompt 를 **조용히 막아서** 버튼이 아무 일도 안 하는 것처럼 보였다(위시태그 리스트 지우기).
+     세 앱(약속 잡자·밴드매니저·위시태그)이 이 창 하나를 같이 쓴다 → ask() / askText() ══════════ -->
+<div class="modal" id="askModal" hidden>
+  <div class="sheet" role="alertdialog" aria-modal="true" style="max-width:400px">
+    <h2 id="askTitle" style="margin:0 0 6px;font-size:18px"></h2>
+    <p id="askText" style="margin:0 0 12px;white-space:pre-line;line-height:1.55"></p>
+    <label class="fld" id="askFld" hidden><span id="askLbl"></span><input type="text" id="askInput" autocomplete="off"></label>
+    <div class="row" style="gap:8px;justify-content:flex-end;margin-top:4px">
+      <button class="btn ghost" type="button" id="askNo" data-close>취소</button>
+      <button class="btn primary" id="askOk" type="button">확인</button>
+    </div>
+  </div>
+</div>
 <div class="statusbar" id="statusbar">
   <span id="status"></span>
   <button class="btn primary" id="saveBtn" type="button" hidden>저장</button>
@@ -335,8 +349,51 @@ function openOutside(){
   if (t){ location.href = t; return; }
   const u = location.href;
   try { navigator.clipboard.writeText(u); setStatus("주소를 복사했어요 — 사파리에 붙여넣기 해주세요", "ok"); }
-  catch(e){ prompt("이 주소를 사파리에 붙여넣어 주세요", u); }
+  catch(e){ askText({ title: "이 주소를 사파리에 붙여넣어 주세요", value: u, readonly: true, ok: "닫기", noCancel: true }); }
 }
+/* ═══ 확인·입력 창 ═══
+   ask({ title, text, ok, danger, type })  → Promise<boolean>   (type: 그 글자를 그대로 적어야 '확인' — 지우기)
+   askText({ title, text, value, ok, placeholder, maxlength, readonly }) → Promise<string|null>
+   결과는 창이 닫히며 생기는 뒤로가기(history.back)가 끝난 뒤에 돌려준다 → 이어서 주소를 바꿔도 옛 주소로 안 돌아간다 */
+let askDone = null, askKind = "", askType = "";
+function afterBack(fn){
+  let done = false;
+  const go = () => { if (done) return; done = true; window.removeEventListener("popstate", go); setTimeout(fn, 0); };
+  window.addEventListener("popstate", go); setTimeout(go, 350);
+}
+function askOpen(o, kind, res){
+  if (askDone){ const r = askDone; askDone = null; r(askKind === "text" ? null : false); }
+  askDone = res; askKind = kind; askType = o.type || "";
+  $("#askTitle").textContent = o.title || "";
+  $("#askText").textContent = o.text || ""; $("#askText").hidden = !o.text;
+  const field = kind === "text" || !!askType;
+  $("#askFld").hidden = !field;
+  $("#askLbl").textContent = askType ? "확인하려면 ‘" + askType + "’ 를 그대로 적어주세요" : (o.label || "");
+  $("#askLbl").hidden = !$("#askLbl").textContent;
+  const inp = $("#askInput");
+  inp.value = kind === "text" ? (o.value || "") : ""; inp.placeholder = o.placeholder || "";
+  inp.maxLength = o.maxlength || 200; inp.readOnly = !!o.readonly;
+  $("#askOk").textContent = o.ok || "확인";
+  $("#askOk").className = "btn " + (o.danger ? "dangerfill" : "primary");
+  $("#askNo").hidden = !!o.noCancel;
+  $("#askOk").disabled = !!askType;
+  openModal("askModal");
+  if (field) setTimeout(() => { try { inp.focus(); if (kind === "text") inp.select(); } catch(e){} }, 80);
+}
+function ask(o){ return new Promise(res => askOpen(o || {}, "confirm", res)); }
+function askText(o){ return new Promise(res => askOpen(o || {}, "text", res)); }
+$("#askInput").addEventListener("input", () => { if (askType) $("#askOk").disabled = $("#askInput").value.trim() !== askType; });
+$("#askInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing && !$("#askOk").disabled){ e.preventDefault(); $("#askOk").click(); } });
+$("#askOk").onclick = () => {
+  const r = askDone, v = askKind === "text" ? $("#askInput").value : true;
+  askDone = null; closeModal("askModal"); afterBack(() => r && r(v));
+};
+MODAL_AFTER.askModal = () => {              // ✕·취소·바깥·뒤로가기 = 아니오
+  const r = askDone; if (!r) return;
+  askDone = null; const v = askKind === "text" ? null : false;
+  afterBack(() => r(v));
+};
+
 /** 공유 = **한 줄** "밴드매니저 - 키니피 https://…" (2026-10-01 Benny: "약속잡자랑 밴드매니저 공유할 때 이렇게")
     휴대폰은 공유창에 그 한 줄을 text 로만 넘긴다(앱마다 text·url 을 따로 붙이는 순서가 달라서). PC 는 그 한 줄을 복사 */
 async function shareLine(line, copiedMsg){
@@ -345,7 +402,7 @@ async function shareLine(line, copiedMsg){
     catch(e){ if (e && (e.name === "AbortError" || e.name === "NotAllowedError")) return; }   // 그냥 닫은 것
   }
   try { await navigator.clipboard.writeText(line); setStatus(copiedMsg || "복사했어요 — 붙여넣어 보내세요", "ok"); }
-  catch(e){ prompt("이 글을 복사해서 보내세요", line); }
+  catch(e){ askText({ title: "이 글을 복사해서 보내세요", text: "글을 길게 눌러 복사하세요", value: line, readonly: true, ok: "닫기", noCancel: true }); }
 }
 /* 시스템 공유창은 휴대폰(터치)에서만 — PC 크롬은 창이 뜨다 말아서 바로 복사로 (2026-10-01 Benny) */
 function canNativeShare(){
