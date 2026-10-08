@@ -19,7 +19,7 @@
 <meta property="og:image" content="https://benny3s.github.io/when/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<link rel="stylesheet" href="ui.css?v=2026-10-09a">
+<link rel="stylesheet" href="ui.css?v=2026-10-09b">
 </head>
 <body>
 <div class="wrap">
@@ -129,8 +129,6 @@
 <!-- ══════════ 약속 화면 ══════════ -->
 <section id="view-meet" hidden>
 
-  <div data-sched="who"></div>
-
   <!-- 약속 정보 -->
   <div class="card" id="meetCard">
     <div class="spread">
@@ -139,14 +137,15 @@
         <h2 id="mTitle" class="bigtitle" style="margin:0"></h2>
         <p class="hint" id="mSub" style="margin:3px 0 0"></p>
       </div>
-      <!-- 고치는 건 전부 ⚙ 설정 하나로 (2026-09-28 Benny: "공유 버튼이 너무 안 보이고, 수정이 2개라서 헷갈려") -->
-      <button class="btn sm setbtn" id="mEdit" type="button" style="flex:0 0 auto">⚙ 설정</button>
     </div>
     <p class="fixedline" id="mFixed" hidden></p>
-    <div class="sheettools">
-      <button class="btn primary" id="heatOpenBtn" type="button">결과 보기</button>
-      <button class="btn soft" id="mShare" type="button">🔗 친구에게 공유</button>
+    <!-- 👤 누구세요 · 🔗 공유 · ⚙ 설정 (2026-10-09 Benny: 여행 가자·밴드매니저와 같이) -->
+    <div class="hbtns">
+      <button class="hb who" id="whoBtn" type="button"></button>
+      <button class="hb share" id="mShare" type="button"><span>🔗 공유</span></button>
+      <button class="hb set" id="mEdit" type="button"><span>⚙ 설정</span></button>
     </div>
+    <button class="btn primary wide" id="heatOpenBtn" type="button" style="margin-top:8px;height:50px">📊 결과 보기</button>
   </div>
 
   <div data-sched="sheet"></div>
@@ -210,15 +209,22 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- ══════════ 누구세요 — 머리의 👤 버튼으로 여는 창 (2026-10-09 Benny: 여행 가자와 같이 버튼 세 개) ══════════ -->
+<div class="modal" id="whoModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:440px">
+    <div style="display:flex;justify-content:flex-end;margin:-4px -4px -30px 0"><button class="iconbtn" type="button" data-close aria-label="닫기">✕</button></div>
+    <div data-sched="who"></div>
+  </div>
+</div>
 <script src="core.js?v=2026-10-08f"></script>
-<script src="sched.js?v=2026-10-08f"></script>
+<script src="sched.js?v=2026-10-09b"></script>
 <script>/* 약속 잡자 — benny3s.github.io/when/  (옛 주소 /meet/ 는 여기로 넘겨준다, 2026-09-28)
    약속 하나 = 링크 하나(?m=<id>).
    이 페이지는 '껍데기'다 — 새 약속 만들기 · 약속 목록 · ?admin · 약속 카드 · 약속 설정.
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-08f";
+const BUILD = "2026-10-09b";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
@@ -508,6 +514,16 @@ function resetNewForm(){
   $("#n_who").value = "";
 }
 
+/* ═══ 👤 누구세요 — 머리 버튼 · 창 (2026-10-09 Benny: 여행 가자와 같이 버튼 세 개) ═══ */
+function openWho(){ whoOpen = true; whoAdd = false; renderWho(); openModal("whoModal"); }
+function onWhoPicked(){ if (!$("#whoModal").hidden) closeModal("whoModal"); renderWhoBtn(); }
+function renderWhoBtn(){
+  const b = $("#whoBtn"); if (!b) return;
+  b.innerHTML = ""; const sp = document.createElement("span"); sp.textContent = "👤 " + (me || "누구세요?"); b.appendChild(sp);
+  b.classList.toggle("need", !me);
+}
+$("#whoBtn").onclick = openWho;
+
 function renderAll(){
   if (!meet()){ showNew(); return; }
   $("#view-new").hidden = true;
@@ -538,6 +554,7 @@ function renderAll(){
   $("#heatOpenBtn").hidden = !dates().length;
   $("#foot").textContent = "약속 잡자 " + BUILD + (lastMs ? " · 서버 " + (lastMs/1000).toFixed(1) + "초" : "");
   renderSched();
+  renderWhoBtn();
 }
 
 

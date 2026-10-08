@@ -775,6 +775,10 @@ function pickMe(n){
   setStatus(n + " 님으로 칠합니다", "ok");
 }
 
+/* 이름을 고르면 페이지에 알린다 — '누구세요' 창을 닫고 머리 버튼 글자를 바꾸려고 (2026-10-09) */
+const pickMeCore = pickMe;
+pickMe = function(n){ pickMeCore(n); if (typeof onWhoPicked === "function" && me) onWhoPicked(me); };
+
 /** ○ 다 돼요 / △ 일부만 / ✕ 안 돼요 / – 미정 — 표와 달력이 **같은 기호**를 쓴다
     (2026-09-22l Benny: "되면 O, 부분적으로 되면 세모, 안되면 X, 미정은 –") */
 function markOf(d, hrs, ans, mine){
@@ -1908,6 +1912,8 @@ $("#dmClose").onclick   = () => closeDay();
 /* 내 입력 창의 ⚙(이 날 설정)은 뺐다 — 날짜 머리를 누르면 같은 설정이 열린다 (2026-09-30 Benny: "중복 기능") */
 /** 이름 없이 입력하려 할 때 — 창을 닫고 '누구세요' 를 펼친다 */
 function askName(){
+  /* 페이지가 '누구세요' 를 창으로 두면 그 창을 연다 (2026-10-09 머리 버튼 세 개) */
+  if (typeof openWho === "function"){ closeDay(); afterBack(() => openWho()); return; }
   closeDay(); whoOpen = true; whoAdd = false; renderWho();
   $("#whoCard").scrollIntoView({ behavior:"smooth", block:"center" });
   setTimeout(() => { if (!$("#whoAddRow").hidden) $("#whoInput").focus(); }, 300);
