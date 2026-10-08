@@ -36,7 +36,7 @@ h1{margin:0;font-size:18px;font-weight:800;letter-spacing:-.035em;line-height:1.
   font-size:15px;font-weight:800;letter-spacing:-.04em}
 .titlebtn .tt{min-width:0;flex:1 1 auto}
 /* ⚙ 설정 — 희미하지 않게 (2026-09-28 Benny) */
-.btn.setbtn{background:var(--card);border:1.5px solid var(--line);color:var(--ink);font-weight:700}
+.btn.setbtn{background:#eef0f1;border:1.5px solid #d7dcdf;color:#59646b;font-weight:700}   /* 설정은 회색 — 세 앱 같이 (2026-10-09 Benny) */
 .hact{display:flex;align-items:center;gap:7px;flex:0 1 auto;min-width:0;max-width:55%}
 /* 약속 안에서는 버튼에 **지금 약속 이름** (2026-09-28 Benny: "선택된 건지 긴가민가") — 길면 '…' */
 .btn.pickbtn{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0}
@@ -254,7 +254,8 @@ html.scrlock,html.scrlock body{overflow:hidden;overscroll-behavior:none}
 .seg .segb{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;
   font-size:13px;font-weight:700;letter-spacing:-.02em;padding:8px 14px;border-radius:9px;
   cursor:pointer;min-height:38px}
-.seg .segb[aria-selected="true"]{background:var(--card);color:var(--accent);
+/* 고른 쪽은 초록으로 꽉 채워 눈에 띄게 (2026-10-09 Benny: "탭이 너무 눈에 안 띄어") */
+.seg .segb[aria-selected="true"]{background:var(--accent);color:var(--on-accent);
   box-shadow:0 1px 3px rgba(0,0,0,.07)}
 .calnav{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 9px}
 .calnav b{font-size:15px;letter-spacing:-.02em}
@@ -368,13 +369,15 @@ footer{color:var(--muted);font-size:11.5px;text-align:center;padding:10px 0 4px}
 /* 지금 보는 약속을 크게 (2026-09-22b Benny: "위에는 그대로라 헷갈림") */
 .eyebrow{margin:0 0 2px;font-size:10.5px;font-weight:800;color:var(--accent);letter-spacing:.02em}
 h2.bigtitle{font-size:22px;font-weight:900;letter-spacing:-.045em;line-height:1.2;overflow-wrap:anywhere}
-/* 누구세요는 늘 연두색으로 눈에 띄게 (2026-09-22b Benny) */
-#whoCard{background:rgba(var(--accent-rgb),.08);border-color:rgba(var(--accent-rgb),.3)}
-#whoCard.need{border-width:2px;border-color:rgba(var(--accent-rgb),.55)}
+/* 누구세요는 **하늘색**으로 튀게 — 세 앱(약속 잡자·밴드매니저·여행 가자) 같이 (2026-10-09 Benny. 예전 2026-09-22b 는 연두색) */
+#whoCard{background:#e8f4fd;border-color:#9ccdf0}
+#whoCard.need{border-width:2px;border-color:#2b8cd6}
+#whoCard .wholine .dot{background:#2b8cd6}
+#whoCard .chip.add{color:#0b5c9e;border-color:#5aaeea}
 /* ⚠️ id 로 감싼 규칙은 .chip[aria-pressed] 를 이긴다 — 고른 칩까지 흰 배경이 되어
    초록 위 초록 글씨 사고가 또 났다 (2026-09-21 21b 와 같은 함정). 눌리지 않은 칩만 칠한다. */
 #whoCard .chip[aria-pressed="false"]{background:var(--card)}
-#whoCard .chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+#whoCard .chip[aria-pressed="true"]{background:#2b8cd6;border-color:#2b8cd6;color:#fff}
 /* 표에서 어디를 눌러야 하는지 (2026-09-22b Benny: "뭘 눌러야할지 잘 안보여") */
 table.sheet tr.me td{background:rgba(var(--accent-rgb),.10)}
 table.sheet tr.me td button{border:1px dashed transparent;border-radius:9px}
