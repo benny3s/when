@@ -224,7 +224,7 @@
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-09b";
+const BUILD = "2026-10-09c";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
@@ -257,7 +257,16 @@ function agoText(t){
    서버 meet_info 는 준 id 에 해당하는 것만 돌려준다. 새로 새는 정보가 없다. */
 /* 주소 끝에 ?admin 만 붙이면 관리 화면 (2026-09-21 Benny: "?admin 보통 이렇게 하니")
    # 뒤는 서버로 안 가고 ? 뒤는 간다 → 전체 목록을 받아오려면 ? 가 맞다 */
-function isAdmin(){ return new URLSearchParams(location.search).has("admin"); }
+/* ?admin 은 메인 페이지(benny3s.github.io)에서 관리자 모드를 켜 둔 때만 통한다 (2026-10-09 Benny: "관리자 모드는 메인 페이지 Benny 3번 클릭으로만")
+   아니면 주소에서 ?admin 을 지우고 일반 화면 — 옛 즐겨찾기가 ?admin 이어도 */
+function isAdmin(){
+  if (!new URLSearchParams(location.search).has("admin")) return false;
+  let at = 0; try { at = +localStorage.getItem("bennyAdminAt") || 0; } catch(e){}
+  return Date.now() - at < 6 * 3600e3;
+}
+if (new URLSearchParams(location.search).has("admin") && !isAdmin()){
+  try { const q = new URLSearchParams(location.search); q.delete("admin"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "")); } catch(e){}
+}
 function adminUrl(){ return location.origin + location.pathname + "?admin"; }
 let adRows = [];
 async function loadAdmin(){
