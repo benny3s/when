@@ -731,3 +731,4 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .fbctx .k{display:block;color:var(--muted);font-size:11.5px;margin-bottom:4px;line-height:1.45}
 .fbctx #fbCtx{white-space:pre-wrap;word-break:break-all;color:var(--ink)}
 .btn.kakao{background:#FEE500;border-color:#FEE500;color:#191919;text-decoration:none}
+.fbwrap.aftermore{margin:8px 0 0}

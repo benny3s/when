@@ -421,6 +421,9 @@ function feedbackCtx(){
 (function(){
   const foot = document.getElementById("foot"); if (!foot) return;
   foot.insertAdjacentHTML("beforebegin", '<div class="fbwrap"><button type="button" class="fbbtn" id="fbBtn">💬 의견 보내기</button></div>');
+  /* 순서: 🧭 다른 프로젝트 → 💬 의견 보내기 → 버전 글자 (2026-10-10 Benny: 두 버튼을 붙여서) */
+  const more = document.querySelector("p.more"), fw = foot.previousElementSibling;
+  if (more){ more.after(fw); fw.after(foot); fw.classList.add("aftermore"); }
   $("#fbGo").href = FEEDBACK_CHAT;
   $("#fbBtn").onclick = () => { $("#fbCtx").textContent = feedbackCtx(); openModal("fbModal"); };
   $("#fbGo").addEventListener("click", () => {        // 누르는 순간 복사 (링크 이동은 그대로)
