@@ -723,3 +723,11 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 #whoModal .sheet{background:#f3f9fe}
 /* 저장 · 삭제 한 줄 — 삭제는 오른쪽 빨간 테두리 */
 .btn.delbtn{flex:0 0 auto;min-width:76px;background:var(--card);border:1.5px solid rgba(180,71,47,.45);color:var(--warn);font-weight:800}
+/* 의견 보내기 (2026-10-10, 세 앱 공통) — 맨 아래 작게, 창 안 정보 칸, 카카오 노란 버튼 */
+.fbwrap{text-align:center;margin:18px 0 0}
+.fbbtn{appearance:none;font:inherit;font-size:13px;font-weight:700;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:8px 16px;min-height:40px;cursor:pointer}
+.fbbtn:hover{color:var(--ink);border-color:var(--muted)}
+.fbctx{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px}
+.fbctx .k{display:block;color:var(--muted);font-size:11.5px;margin-bottom:4px;line-height:1.45}
+.fbctx #fbCtx{white-space:pre-wrap;word-break:break-all;color:var(--ink)}
+.btn.kakao{background:#FEE500;border-color:#FEE500;color:#191919;text-decoration:none}

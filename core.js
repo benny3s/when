@@ -29,6 +29,22 @@ const CORE_HTML = `<!-- ══════════ 시간 고르기 (작은 
     </div>
   </div>
 </div>
+<!-- ══════════ 의견 보내기 — 카카오톡 채널 1:1 채팅으로 (2026-10-10, 세 앱 공통)
+     채널로 가면 Benny 폰에 알림이 오고 답장도 할 수 있다. 어느 앱·어느 화면인지는 복사해서 붙여넣게 ══════════ -->
+<div class="modal" id="fbModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
+    <div class="spread" style="margin-bottom:6px">
+      <h2 style="margin:0;font-size:18px">💬 의견 보내기</h2>
+      <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
+    </div>
+    <p style="margin:0 0 10px;line-height:1.55">불편한 점, 안 되는 것, 있었으면 하는 기능 — 무엇이든 카카오톡으로 보내 주세요. 답장도 드려요.</p>
+    <div class="fbctx"><span class="k">이 화면 정보 — 버튼을 누르면 복사돼요. 채팅에 붙여넣어 주시면 더 빨리 고칠 수 있어요</span><div id="fbCtx"></div></div>
+    <div class="row" style="gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn ghost" type="button" data-close>닫기</button>
+      <a class="btn kakao" id="fbGo" target="_blank" rel="noopener">카카오톡으로 보내기</a>
+    </div>
+  </div>
+</div>
 <div class="statusbar" id="statusbar">
   <span id="status"></span>
   <button class="btn primary" id="saveBtn" type="button" hidden>저장</button>
@@ -393,6 +409,26 @@ MODAL_AFTER.askModal = () => {              // ✕·취소·바깥·뒤로가기
   askDone = null; const v = askKind === "text" ? null : false;
   afterBack(() => r(v));
 };
+
+/* ═══ 의견 보내기 — 맨 아래(#foot 위) 작은 버튼 → fbModal → 카카오톡 채널 1:1 채팅 ═══ */
+const FEEDBACK_CHAT = "https://pf.kakao.com/_axijrX/chat";
+function feedbackCtx(){
+  const ua = navigator.userAgent || "";
+  const env = /KAKAOTALK/i.test(ua) ? "카톡 안 브라우저" : /Android/i.test(ua) ? "안드로이드" : /iPhone|iPad/i.test(ua) ? "아이폰" : "PC";
+  const ver = typeof BUILD !== "undefined" ? BUILD : "";
+  return "[" + document.title + "] " + ver + " · " + env + "\n" + location.href.split("#")[0];
+}
+(function(){
+  const foot = document.getElementById("foot"); if (!foot) return;
+  foot.insertAdjacentHTML("beforebegin", '<div class="fbwrap"><button type="button" class="fbbtn" id="fbBtn">💬 의견 보내기</button></div>');
+  $("#fbGo").href = FEEDBACK_CHAT;
+  $("#fbBtn").onclick = () => { $("#fbCtx").textContent = feedbackCtx(); openModal("fbModal"); };
+  $("#fbGo").addEventListener("click", () => {        // 누르는 순간 복사 (링크 이동은 그대로)
+    const t = $("#fbCtx").textContent;
+    try { navigator.clipboard.writeText(t).catch(() => {}); } catch(e){}
+    setTimeout(() => closeModal("fbModal"), 300);
+  });
+})();
 
 /** 공유 = **한 줄** "밴드매니저 - 키니피 https://…" (2026-10-01 Benny: "약속잡자랑 밴드매니저 공유할 때 이렇게")
     휴대폰은 공유창에 그 한 줄을 text 로만 넘긴다(앱마다 text·url 을 따로 붙이는 순서가 달라서). PC 는 그 한 줄을 복사 */
