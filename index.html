@@ -217,14 +217,14 @@
   </div>
 </div>
 <script src="core.js?v=2026-10-10b"></script>
-<script src="sched.js?v=2026-10-10a"></script>
+<script src="sched.js?v=2026-10-26a"></script>
 <script>/* 약속 잡자 — benny3s.github.io/when/  (옛 주소 /meet/ 는 여기로 넘겨준다, 2026-09-28)
    약속 하나 = 링크 하나(?m=<id>).
    이 페이지는 '껍데기'다 — 새 약속 만들기 · 약속 목록 · ?admin · 약속 카드 · 약속 설정.
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-10b";
+const BUILD = "2026-10-26a";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
@@ -399,7 +399,7 @@ function renderAdmin(){
    누구나 전체 목록을 보고 고른다. 이름이 유일해야 찾을 수 있어서 서버가 중복을 막는다. */
 let pickRows = null, pickLoading = false, pickBusy = false;
 /* 목록도 스냅샷 먼저 — 서버 왕복이 1.5~4초라 그동안 빈 화면이었다 (2026-09-21 Benny: "너무 오래걸려") */
-const LIST_KEY = "meet_list_snap", LIST_TTL = 24 * 3600 * 1000;
+const LIST_KEY = "meet_list_snap2", LIST_TTL = 24 * 3600 * 1000;
 function listSnapLoad(){
   try {
     const c = JSON.parse(localStorage.getItem(LIST_KEY) || "null");
@@ -455,7 +455,7 @@ function renderPick(){
     .filter(m => !q || String(m.title || "").toLowerCase().includes(q))
     .sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "ko"));
 
-  hint.textContent = q ? list.length + "개 찾음" : "전체 " + pickRows.length + "개";
+  hint.textContent = q ? list.length + "개 찾음" : "이 기기에서 연 약속 " + pickRows.length + "개 · 다른 약속은 받은 링크로 들어와요";
   if (!list.length){
     box.innerHTML = '<p class="hint" style="margin:10px 0 0">' +
       (q ? "찾는 약속이 없어요." : "아직 만들어진 약속이 없습니다.") + "</p>";

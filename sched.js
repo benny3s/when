@@ -353,6 +353,9 @@ function newPerson(name, extra){
 async function titleTakenRemote(title, skipId){
   const k = titleKeyOf(title);
   if (!k) return false;
+  /* 약속 잡자는 2026-10-26 부터 링크 전용 — 전체 목록 조회가 막혀 이름 중복 검사를 안 한다(이름으로 찾지 않고 링크로 들어온다).
+     밴드매니저 시간표(SCHED_COL)는 그 밴드 안에서만 본다 → 그대로 */
+  if (typeof SCHED_COL !== "function") return false;
   const q = await meetsCol().where("titleKey", "==", k).limit(3).get();
   return q.docs.some(d => d.id !== skipId);
 }
@@ -370,7 +373,15 @@ async function removeMeets(ids){
 
 /** 목록 — full 이면 관리 화면용으로 참여자·응답 수·마지막 수정까지 */
 async function listMeets(full){
-  const qs = await meetsCol().get();
+  /* 2026-10-26 링크 전용 (Benny: "링크 있어야만 들어올 수 있게") — 약속 잡자의 전체 목록은 서버 규칙에서 막힘.
+     이 기기에서 열어 본 약속(recentGet)만 하나씩 불러온다. 밴드매니저 시간표는 그 밴드 안 목록이라 그대로 */
+  let docs;
+  if (typeof SCHED_COL === "function") docs = (await meetsCol().get()).docs;
+  else {
+    const ids = (typeof recentGet === "function" ? recentGet() : []).map(x => x && x.id).filter(Boolean);
+    docs = (await Promise.all(ids.map(id => meetRef(id).get().catch(() => null)))).filter(s => s && s.exists);
+  }
+  const qs = { docs };
   const rows = qs.docs.map(d => {
     const m = d.data(), ds = cleanDates(m.dates || []);
     return { id: d.id, title: m.title || "", place: m.place || "", memo: m.memo || "", fixed: m.fixed || "",
