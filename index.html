@@ -153,7 +153,9 @@
 </section>
 
 <footer id="foot"></footer>
-<p class="more"><a href="https://benny3s.github.io/" target="_blank" rel="noopener">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
+<!-- 🧭 다른 프로젝트는 Benny(포털 관리자 모드 켠 기기)만 — 친구는 받은 링크의 앱만 (2026-10-27 Benny, 밴드매니저·Music Lab 과 같이) -->
+<p class="more" style="display:none"><a href="https://benny3s.github.io/" target="_blank" rel="noopener">🧭 개발자의 다른 프로젝트도 구경하기 →</a></p>
+<script>try { if (localStorage.getItem("bennyAdminAt")) document.currentScript.previousElementSibling.style.display = ""; } catch(e){}</script>
 </div>
 
 <!-- ══════════ 약속 선택 ══════════ -->
@@ -224,7 +226,7 @@
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-26a";
+const BUILD = "2026-10-27a";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
