@@ -468,7 +468,6 @@ const IAB_ON = false;
 /* ═══ 관리자 인증 · 목록 동기화 (2026-10-30, 4개 앱 공용) ═══
    포털(benny3s.github.io)에서 관리자 로그인 상태면 adminIdx/{bennyAdminKey} 에서
    밴드·약속·여행·위시 목록을 자동으로 받아 이 기기 목록에 합친다. */
-const PORTAL_API_KEY = "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs";
 function isAdminMode(){
   try {
     if (localStorage.getItem("bennyAdminOff") === "1") return false;
@@ -493,8 +492,13 @@ function readPortalAdminAuth(){
           const db0 = r.result;
           if (!db0.objectStoreNames.contains("firebaseLocalStorage")){ db0.close(); ok(null); return; }
           const tx = db0.transaction("firebaseLocalStorage", "readonly");
-          const req = tx.objectStore("firebaseLocalStorage").get("firebase:authUser:" + PORTAL_API_KEY + ":[DEFAULT]");
-          req.onsuccess = () => { db0.close(); const v = req.result && req.result.value; ok(v && v.uid === "admin" ? v : null); };
+          const req = tx.objectStore("firebaseLocalStorage").getAll();
+          req.onsuccess = () => {
+            db0.close();
+            const list = req.result || [];
+            const hit = list.find(x => x && x.value && x.value.uid === "admin");
+            ok(hit ? hit.value : null);
+          };
           req.onerror = () => { db0.close(); ok(null); };
         } catch(e){ ok(null); }
       };
@@ -529,7 +533,7 @@ async function ensureAdminKey(){
       if (!tok || (u.stsTokenManager.expirationTime || 0) < Date.now() + 60000){
         const rt = u.stsTokenManager.refreshToken;
         if (!rt) return "";
-        const tr = await fetch("https://securetoken.googleapis.com/v1/token?key=" + PORTAL_API_KEY, {
+        const tr = await fetch("https://securetoken.googleapis.com/v1/token?key=" + encodeURIComponent(u.apiKey || ""), {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(rt)
