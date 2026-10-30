@@ -368,18 +368,34 @@ async function removeMeets(ids){
     for (let i = 0; i < refs.length; i += 400){
       const b = db.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit();
     }
+    if (typeof SCHED_COL !== "function" && typeof adminUntrack === "function") adminUntrack("meets", id);
   }
 }
 
 /** 목록 — full 이면 관리 화면용으로 참여자·응답 수·마지막 수정까지 */
 async function listMeets(full){
   /* 2026-10-26 링크 전용 (Benny: "링크 있어야만 들어올 수 있게") — 약속 잡자의 전체 목록은 서버 규칙에서 막힘.
-     이 기기에서 열어 본 약속(recentGet)만 하나씩 불러온다. 밴드매니저 시간표는 그 밴드 안 목록이라 그대로 */
+     이 기기에서 열어 본 약속(recentGet)만 하나씩 불러온다. 관리자는 adminList("meets")도 합친다 */
   let docs;
   if (typeof SCHED_COL === "function") docs = (await meetsCol().get()).docs;
   else {
     const ids = (typeof recentGet === "function" ? recentGet() : []).map(x => x && x.id).filter(Boolean);
+    if (typeof adminList === "function"){
+      const adm = await adminList("meets");
+      adm.forEach(id => { if (id && !ids.includes(id)) ids.push(id); });
+    }
     docs = (await Promise.all(ids.map(id => meetRef(id).get().catch(() => null)))).filter(s => s && s.exists);
+    if (typeof recentGet === "function" && typeof recentPut === "function"){
+      const cur = recentGet(), seen = new Set(cur.map(x => x && x.id));
+      let added = false;
+      docs.forEach(d => {
+        if (!seen.has(d.id)){
+          cur.push({ id: d.id, title: String((d.data() || {}).title || "").slice(0, 60), at: Date.now() });
+          added = true;
+        }
+      });
+      if (added) recentPut(cur);
+    }
   }
   const qs = { docs };
   const rows = qs.docs.map(d => {
@@ -430,6 +446,7 @@ async function doAct(p){
     const t0 = Date.now();
     names.forEach((n, i) => b.set(peopleOf(ref.id).doc(), newPerson(n, { added: TS.fromMillis(t0 + i) })));
     await b.commit();
+    if (typeof SCHED_COL !== "function" && typeof adminTrack === "function") adminTrack("meets", ref.id);
     await watch(ref.id);
     return Object.assign(buildST(), { newId: ref.id });
   }

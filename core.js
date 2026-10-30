@@ -464,3 +464,126 @@ const IAB_ON = false;
     try { sessionStorage.setItem("meet_iab_skip", "1"); } catch(e){}
   };
 })();
+
+/* ═══ 관리자 인증 · 목록 동기화 (2026-10-30, 4개 앱 공용) ═══
+   포털(benny3s.github.io)에서 관리자 로그인 상태면 adminIdx/{bennyAdminKey} 에서
+   밴드·약속·여행·위시 목록을 자동으로 받아 이 기기 목록에 합친다. */
+const PORTAL_API_KEY = "AIzaSyCSueePQfiHaRxUSZxoropiFjiq9arAaTs";
+function isAdminMode(){
+  try {
+    if (localStorage.getItem("bennyAdminOff") === "1") return false;
+    return !!(localStorage.getItem("bennyAdminSession") === "1" || localStorage.getItem("bennyAdminAt"));
+  } catch(e){ return false; }
+}
+function applyAdminUi(){
+  const on = isAdminMode();
+  document.body.classList.toggle("is-admin", on);
+  const m = document.querySelector("p.more");
+  if (m && !m.classList.contains("adm")) m.style.display = on ? "" : "none";
+}
+applyAdminUi();
+
+function readPortalAdminAuth(){
+  return new Promise(ok => {
+    try {
+      const r = indexedDB.open("firebaseLocalStorageDb");
+      r.onerror = () => ok(null);
+      r.onsuccess = () => {
+        try {
+          const db0 = r.result;
+          if (!db0.objectStoreNames.contains("firebaseLocalStorage")){ db0.close(); ok(null); return; }
+          const tx = db0.transaction("firebaseLocalStorage", "readonly");
+          const req = tx.objectStore("firebaseLocalStorage").get("firebase:authUser:" + PORTAL_API_KEY + ":[DEFAULT]");
+          req.onsuccess = () => { db0.close(); const v = req.result && req.result.value; ok(v && v.uid === "admin" ? v : null); };
+          req.onerror = () => { db0.close(); ok(null); };
+        } catch(e){ ok(null); }
+      };
+    } catch(e){ ok(null); }
+  });
+}
+
+let _admKeyP = null, _admIdxCache = null;
+async function ensureAdminKey(){
+  try {
+    if (localStorage.getItem("bennyAdminOff") === "1") return "";
+  } catch(e){ return ""; }
+  if (!isAdminMode()){
+    const u = await readPortalAdminAuth();
+    if (!u) return "";
+    try {
+      localStorage.setItem("bennyAdminSession", "1");
+      localStorage.setItem("bennyAdminAt", String(Date.now()));
+    } catch(e){}
+    applyAdminUi();
+  }
+  try {
+    const cached = localStorage.getItem("bennyAdminKey") || "";
+    if (/^[0-9a-f]{64}$/.test(cached)) return cached;
+  } catch(e){}
+  if (_admKeyP) return _admKeyP;
+  _admKeyP = (async () => {
+    try {
+      const u = await readPortalAdminAuth();
+      if (!u || !u.stsTokenManager) return "";
+      let tok = u.stsTokenManager.accessToken || "";
+      if (!tok || (u.stsTokenManager.expirationTime || 0) < Date.now() + 60000){
+        const rt = u.stsTokenManager.refreshToken;
+        if (!rt) return "";
+        const tr = await fetch("https://securetoken.googleapis.com/v1/token?key=" + PORTAL_API_KEY, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(rt)
+        });
+        if (!tr.ok) return "";
+        tok = (await tr.json()).id_token || "";
+      }
+      if (!tok) return "";
+      const kr = await fetch("https://firestore.googleapis.com/v1/projects/benny-meeting/databases/(default)/documents/radar/key", {
+        headers: { Authorization: "Bearer " + tok }
+      });
+      if (!kr.ok) return "";
+      const kd = await kr.json();
+      const jwk = JSON.parse(kd.fields.jwk.stringValue);
+      if (!jwk || !jwk.d) return "";
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("benny-apps-admin:" + jwk.d));
+      const key = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      try { localStorage.setItem("bennyAdminKey", key); } catch(e){}
+      return key;
+    } catch(e){ return ""; }
+    finally { _admKeyP = null; }
+  })();
+  return _admKeyP;
+}
+
+async function adminList(col){
+  if (!FB_OK || !db) return [];
+  const k = await ensureAdminKey();
+  if (!k) return [];
+  try {
+    if (!_admIdxCache){
+      const s = await db.collection("adminIdx").doc(k).get();
+      _admIdxCache = s.exists ? (s.data() || {}) : {};
+    }
+    return Array.isArray(_admIdxCache[col]) ? _admIdxCache[col] : [];
+  } catch(e){ return []; }
+}
+
+async function adminTrack(col, id){
+  if (!FB_OK || !db || !id) return;
+  const k = await ensureAdminKey();
+  if (!k) return;
+  try {
+    if (_admIdxCache && Array.isArray(_admIdxCache[col]) && !_admIdxCache[col].includes(id)) _admIdxCache[col].unshift(id);
+    await db.collection("adminIdx").doc(k).set({ [col]: FV.arrayUnion(id), updatedAt: FV.serverTimestamp() }, { merge: true });
+  } catch(e){}
+}
+
+async function adminUntrack(col, id){
+  if (!FB_OK || !db || !id) return;
+  const k = await ensureAdminKey();
+  if (!k) return;
+  try {
+    if (_admIdxCache && Array.isArray(_admIdxCache[col])) _admIdxCache[col] = _admIdxCache[col].filter(x => x !== id);
+    await db.collection("adminIdx").doc(k).set({ [col]: FV.arrayRemove(id), updatedAt: FV.serverTimestamp() }, { merge: true });
+  } catch(e){}
+}

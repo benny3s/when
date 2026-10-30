@@ -49,6 +49,13 @@
 
 <!-- ══════════ 새 약속 만들기 ══════════ -->
 <section id="view-new" hidden>
+  <div class="card" id="homeMine" hidden>
+    <div class="spread" style="margin-bottom:4px">
+      <h2 style="margin:0">내 약속 목록</h2>
+      <a class="btn ghost sm" id="homeAdminBtn" href="?admin" hidden>🛠 약속 관리</a>
+    </div>
+    <div class="list" id="homeMineList"></div>
+  </div>
   <!-- 새 약속 — 꼭 필요한 것만 보이게 (2026-09-28 Benny: "새로 약속 만들 때 항목이 너무 많은데, 더 심플하게")
        장소·같이 할 사람·시간대는 '＋ 더 정하기' 안에. 안 열어도 된다(친구·장소는 만든 뒤에도 넣을 수 있다) -->
   <div class="card">
@@ -218,15 +225,15 @@
     <div data-sched="who"></div>
   </div>
 </div>
-<script src="core.js?v=2026-10-10b"></script>
-<script src="sched.js?v=2026-10-26a"></script>
+<script src="core.js?v=2026-10-30a"></script>
+<script src="sched.js?v=2026-10-30a"></script>
 <script>/* 약속 잡자 — benny3s.github.io/when/  (옛 주소 /meet/ 는 여기로 넘겨준다, 2026-09-28)
    약속 하나 = 링크 하나(?m=<id>).
    이 페이지는 '껍데기'다 — 새 약속 만들기 · 약속 목록 · ?admin · 약속 카드 · 약속 설정.
    일정(누구세요·표·○△✕·결과)은 sched.js, 바탕(Firebase·창·알림)은 core.js, 디자인은 ui.css —
    밴드매니저와 같이 쓴다 (2026-09-28 Benny: "코드 중복 없이 공용으로"). ⚠️ 셋을 고치면 두 앱이 같이 바뀐다 */
 
-const BUILD = "2026-10-27a";
+const BUILD = "2026-10-30a";
 
 /* ═══ 이 기기가 기억하는 약속들 ═══
    서버에는 목록이 없다(링크 아는 사람만 본다). 그래서 "내가 몇 개 만들었나" 는
@@ -263,8 +270,7 @@ function agoText(t){
    아니면 주소에서 ?admin 을 지우고 일반 화면 — 옛 즐겨찾기가 ?admin 이어도 */
 function isAdmin(){
   if (!new URLSearchParams(location.search).has("admin")) return false;
-  let at = 0; try { at = +localStorage.getItem("bennyAdminAt") || 0; } catch(e){}
-  return Date.now() - at < 6 * 3600e3;
+  return typeof isAdminMode === "function" ? isAdminMode() : !!localStorage.getItem("bennyAdminAt");
 }
 if (new URLSearchParams(location.search).has("admin") && !isAdmin()){
   try { const q = new URLSearchParams(location.search); q.delete("admin"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "")); } catch(e){}
@@ -479,6 +485,22 @@ function renderPick(){
 
 
 /* ═══ 화면 ═══ */
+function renderHomeMeets(){
+  const hm = $("#homeMine"), hml = $("#homeMineList"), ab = $("#homeAdminBtn");
+  if (!hm || !hml) return;
+  const rows = (pickRows || listSnapLoad() || []).slice().sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "ko"));
+  const admOn = typeof isAdminMode === "function" && isAdminMode();
+  if (ab) ab.hidden = !admOn;
+  hm.hidden = !rows.length && !admOn;
+  hml.innerHTML = "";
+  rows.forEach(m => {
+    const go = document.createElement("button");
+    go.type = "button"; go.className = "pk1";
+    go.textContent = m.title || "(이름 없는 약속)";
+    go.onclick = () => { location.href = location.pathname + "?m=" + encodeURIComponent(m.id); };
+    hml.appendChild(go);
+  });
+}
 function showNew(){
   if (!M) unwatch();                       // 약속을 떠났으면 지켜보기도 끊는다
   const ad = isAdmin();
@@ -492,17 +514,20 @@ function showNew(){
   $("#pickName").textContent = "📋 약속 목록";
   $("#pickBtn").title = "약속 목록";
   document.title = "약속 잡자";
-  $("#foot").textContent = "약속 잡자 " + BUILD;
+  const admOn = typeof isAdminMode === "function" && isAdminMode();
+  $("#foot").textContent = "약속 잡자 " + BUILD + (admOn ? " · 관리자" : "");
   if (ad) loadAdmin();
   else {
     resetNewForm();
+    renderHomeMeets();
     /* 첫 화면에서는 목록을 미리 받아둔다 → 이름 중복을 바로 알려줄 수 있다 */
     if (!pickRows && !pickBusy) setTimeout(() => {
       fetchList().then(() => {
+        renderHomeMeets();
         if (!$("#pickModal").hidden) renderPick();
         recheckTitle();                      // 목록이 늦게 와도 다시 검사
       }).catch(() => {});
-    }, 400);
+    }, 100);
   }
 }
 
@@ -563,7 +588,8 @@ function renderAll(){
   $("#mFixed").textContent = m.fixed ? fixedLine(m.fixed) : "";
 
   $("#heatOpenBtn").hidden = !dates().length;
-  $("#foot").textContent = "약속 잡자 " + BUILD + (lastMs ? " · 서버 " + (lastMs/1000).toFixed(1) + "초" : "");
+  const admOn = typeof isAdminMode === "function" && isAdminMode();
+  $("#foot").textContent = "약속 잡자 " + BUILD + (admOn ? " · 관리자" : "") + (lastMs ? " · 서버 " + (lastMs/1000).toFixed(1) + "초" : "");
   renderSched();
   renderWhoBtn();
 }
