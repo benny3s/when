@@ -818,9 +818,12 @@ function markOf(d, hrs, ans, mine){
   if (ans && hrs && hrs.length === 1 && hrs[0] === -1)
     return { cls:"part", mk:"△", tx:"시간 미정", lb:"일부만 (시간 미정)" };
   if (ans && hrs && hrs.length){
-    const whole = (hrs.length >= full && full > 0);
+    /* 시간대 안의 시간만 센다 — 시간대를 바꾼 뒤 겹치는 게 없으면 내 칸(myAnswered)처럼 '–' */
+    const win = hoursFor(d), on = hrs.filter(h => win.includes(h));
+    if (!on.length) return { cls:"none", mk:"–", tx: mine ? "입력" : "", lb:"아직 입력 안 함" };
+    const whole = (on.length >= full && full > 0);
     return whole ? { cls:"all",  mk:"○", tx:"", lb:"다 돼요" }
-                 : { cls:"part", mk:"△", tx:runsOf(hrs, true), lb:runsOf(hrs, true) + "시 가능" };
+                 : { cls:"part", mk:"△", tx:runsOf(on, true), lb:runsOf(on, true) + "시 가능" };
   }
   if (ans) return { cls:"no", mk:"✕", tx:"", lb:"안 돼요" };
   return { cls:"none", mk:"–", tx: mine ? "입력" : "", lb:"아직 입력 안 함" };
@@ -882,7 +885,8 @@ function renderCalView(){
       b.appendChild(fx);
     }
     /* 달력 보기는 칸이 크니 **되는 사람 수**도 (○+△) — 2026-10-01 Benny: "'달력 보기' 로, 화면이 크니까 좀 더" */
-    const can = members().filter(n => { const h = (hoursOf()[n] || {})[d]; return Array.isArray(h) && h.length; }).length;
+    const win = hoursFor(d);                               // 시간대 밖 시간은 세지 않는다 (시간 미정 △ 는 센다)
+    const can = members().filter(n => { const h = (hoursOf()[n] || {})[d]; return Array.isArray(h) && h.some(x => x === -1 || win.includes(x)); }).length;
     if (members().length){
       const c = document.createElement("span"); c.className = "cnt"; c.textContent = can + "명";
       c.title = "되는 사람 " + can + " / " + members().length + "명";
