@@ -47,5 +47,21 @@ test("저장 못 한 입력이 있으면 실패해도 그 입력은 남음", asy
   eq(A.run("me"), "가");
   eq([A.run("dirty"), A.run("noneSel.has('" + D1 + "')"), myH(A, D2)], [true, true, [11]]);
 });
+test("설정 창 '이름변경' 실패 → 내 칸이 그대로, 실패한 이름은 명단에 안 남음 (index.html)", async () => {
+  const A = boot({ m: "m1", index: true, seed: F => {
+    F.put("meets/m1", meetDoc({ dates: [D1, D2] }));
+    F.put("meets/m1/people/p1", person("가", { [D1]: [10], [D2]: [11] }, { added: new Timestamp(1000) }));
+    F.put("meets/m1/people/p2", person("나", {}, { added: new Timestamp(2000) }));
+  } });
+  await A.tick();
+  A.run("pickMe('가')"); await A.tick();
+  A.run("ST.members = ['가']; delete ST.hours['나'];");        // 서버에는 '나' 가 있는데 로컬 명단엔 아직 없음
+  A.run("askText = async () => '나'; openModal('setModal');");
+  await A.created.filter(e => e.textContent === "이름변경")[0].onclick(); await A.tick();
+  eq(A.lastStatus()[1], "err", "실패 알림");
+  eq(A.run("me"), "가");
+  eq(A.run("members()"), ["가"]);
+  eq([myH(A, D1), myH(A, D2)], [[10], [11]]);
+});
 
 main();

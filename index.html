@@ -620,7 +620,7 @@ function renderSet(){
         if (ST.edited && ST.edited[n]){ ST.edited[to] = ST.edited[n]; delete ST.edited[n]; }
         if (me === n){ me = to; }
       });
-      if (!done && wasMe && me === to){ me = n; renderAll(); }   // 실패 — ST 는 act 가 되돌린다, me 도 원래대로
+      if (!done && wasMe && me === to){ me = n; ST.members = members().filter(x => x !== to); loadMine(); renderAll(); }   // 실패 — ST 는 act 가 되돌린다, me 도 원래대로, 실패한 이름 · 빈 칸 정리
     };
     const rm = document.createElement("button"); rm.className = "btn ghost sm danger"; rm.textContent = "빼기";
     rm.onclick = async () => {
