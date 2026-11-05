@@ -626,6 +626,8 @@ function loadMine(force){
   dirty = false;
 }
 function myHours(d){ return hoursFor(d).filter(h => sel.has(key(d,h))); }
+/** 그 날 내 칸을 0~23시 전부 비운다 — 시간대를 좁힌 뒤 ✕·미정·△ 를 눌러도 시간대 밖 옛 시간이 남아 저장되지 않게 */
+function clearDay(d){ for (let h = 0; h < 24; h++) sel.delete(key(d,h)); }
 /** 기호용 내 시각 — 시간 미정 △ 이면 [-1] */
 function myMarkHours(d){ const on = myHours(d); return (!on.length && maybeSel.has(d)) ? [-1] : on; }
 function myAnswered(d){ return myHours(d).length > 0 || noneSel.has(d) || maybeSel.has(d); }
@@ -1480,7 +1482,9 @@ async function save(){
   dates().forEach(d => {
     /* ⚠️ 시간대 밖의 시간도 버리지 않는다 — 시간대를 좁혔다 넓혀도 응답이 살아 있게 */
     const hs = []; for (let h = 0; h < 24; h++) if (sel.has(key(d,h))) hs.push(h);
-    payload.hours[d] = hs.length ? hs : (noneSel.has(d) ? [] : (maybeSel.has(d) ? [-1] : null));
+    /* 단, ✕ 와 '△ 시간 미정'(시간대 안에 고른 시간이 없을 때)이 먼저 — 밖의 옛 시간 때문에 묻히면 남에게 ○ 로 보인다 */
+    const inWin = hs.some(h => hoursFor(d).includes(h));
+    payload.hours[d] = noneSel.has(d) ? [] : ((maybeSel.has(d) && !inWin) ? [-1] : (hs.length ? hs : null));
     payload.notes[d] = noteDraft[d] || "";
   });
   /* 🚨 빈 저장 막기 (2026-09-22r)
@@ -1517,16 +1521,19 @@ async function save(){
   ST.edited[me] = nowStamp();
   dirty = false;
   renderAll();
+  let again = false;
   try {
     ST = await api({ action:"save", m:M, name:me, payload: JSON.stringify(payload) });
     setStatus("");
     renderAll(); snapSave();
+    again = dirty;              // 저장하는 동안 또 넣은 게 있으면(closeDay 는 saving 이라 건너뛴다) 이어서 보낸다
   } catch(e){
     const b = JSON.parse(backup);
     ST.hours = b.h; ST.notes = b.n; ST.edited = b.e;
     dirty = true; renderAll();
     setStatus("저장 실패 — " + e.message + " (저장을 다시 눌러주세요)", "err");
   } finally { saving = false; }
+  if (again && me) save();     // 실패 뒤에는 다시 보내지 않는다 — 저장 버튼을 띄운다
 }
 
 /* ═══ 결과 — 위: 담은 후보 / 아래: 직접 고르기 표 하나 ═══
@@ -1961,7 +1968,7 @@ $("#dmO").onclick = () => {
 $("#dmT").onclick = () => {
   const d = dmDate; if (!d) return;
   const on = myHours(d);
-  if (!on.length || on.length >= hoursFor(d).length){ hoursFor(d).forEach(h => sel.delete(key(d,h))); maybeSel.add(d); }
+  if (!on.length || on.length >= hoursFor(d).length){ clearDay(d); maybeSel.add(d); }
   noneSel.delete(d);
   dmPart = true; dmNOpen = false; dmFrom = null; renderDm(); paintSheet(); touch();
 };
@@ -1969,7 +1976,7 @@ $("#dmMulti").onclick = () => { dmMulti = !dmMulti; dmFrom = null; renderDmHours
 /* ✕ — 바로 '안 돼요' 로 찍는다. 이유 없이 닫아도 저장된다 */
 $("#dmX").onclick = () => {
   const d = dmDate; if (!d) return;
-  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.add(d); maybeSel.delete(d);
+  clearDay(d); noneSel.add(d); maybeSel.delete(d);
   dmPart = false; dmNOpen = false; renderDm(); paintSheet(); touch();
   /* 키보드는 띄우지 않는다 — 이유는 적고 싶을 때만 칸을 누른다 (2026-09-28 Benny: "자동 키보드 불편해") */
 };
@@ -1977,7 +1984,7 @@ $("#dmX").onclick = () => {
 $("#dmN").onclick = () => {
   const d = dmDate; if (!d) return;
   /* 답은 지우고 이유 칸을 펼친다 — ✕ 처럼 이유 없이 닫아도 저장된다. 적어 둔 이유는 그대로 둔다 */
-  hoursFor(d).forEach(h => sel.delete(key(d,h))); noneSel.delete(d); maybeSel.delete(d);
+  clearDay(d); noneSel.delete(d); maybeSel.delete(d);
   dmPart = false; dmNOpen = true; renderDm(); paintSheet(); touch();
 };
 /* ⚠️ 한글 조합 중 Enter 는 건너뛴다 (마지막 글자가 잘리는 걸 막는다) */
@@ -2073,7 +2080,15 @@ $("#whoFriend").onclick  = openFriend;
 $("#whoFriend2").onclick = openFriend;
 
 window.addEventListener("beforeunload", e => { if (dirty){ e.preventDefault(); e.returnValue = ""; } });
+/* 그 날 창을 연 채 앱을 떠나도(카톡으로 돌아감·탭 닫기) ✕·△·이유가 남게 — 숨겨지는 순간 저장한다.
+   beforeunload 경고는 카톡·폰에서 믿기 어렵다. 창은 그대로 두고, 닫을 때 바뀐 게 없으면 다시 저장하지 않는다 */
+function saveOnLeave(){
+  commitNote();
+  if (dirty && me && M && !saving) save();
+}
+window.addEventListener("pagehide", saveOnLeave);
 /* 폰에서 한참 뒤에 두었다 돌아오면 실시간 연결이 끊겨 있을 수 있다 → 끊겼을 때만 다시 붙는다 */
 document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden"){ saveOnLeave(); return; }
   if (document.visibilityState === "visible" && M && live.error) load(true);
 });
