@@ -343,6 +343,8 @@ function cleanFixNotes(v){
 }
 /* 📌 '무슨 일정' 은 입력 12자 — 표 날짜 머리에 7자 남짓 보인다 (2026-10-02 Benny: 글자 수 기준) */
 const FIXNOTE_MAX = 12;
+/* 📌 정한 것(fixed)은 ', ' 로 이은 글자 — 규칙이 str(fixed, 400). 한 개가 22자라 16개 남짓까지 */
+const FIXED_MAX = 400, FIXED_FULL = "📌 가 너무 많아요 (16개 정도까지) — 지난 건 풀어 주세요";
 function offList(){ return (meet() && meet().off) || []; }
 function isOff(n){ return !!n && offList().includes(n); }
 /** 이름 비교용 열쇠 — 앞뒤·연속 공백과 대소문자를 무시 (같은 이름 막기) */
@@ -463,6 +465,43 @@ async function doAct(p){
   if (live.meetState !== "ok") throw fail("없는 약속입니다 (링크를 확인해주세요)");
   const cur = buildST();
 
+  if (a === "meet_set" && p.fixDelta !== undefined){
+    /* 📌·후보·코멘트는 바뀐 것만 받아 서버의 지금 값에 얹어 쓴다 (트랜잭션) — 로컬 값으로 통째 덮으면
+       두 사람이 거의 같이 정할 때 먼저 쓴 쪽이 사라졌다. 쓰는 필드 모양은 예전과 같다 */
+    const dl = JSON.parse(p.fixDelta || "{}"), ref = meetRef(id);
+    const has = k => Array.isArray(dl[k]) && dl[k].length > 0;
+    const up = await db.runTransaction(async tx => {
+      const s = await tx.get(ref);
+      if (!s.exists) throw fail("없는 약속입니다 (링크를 확인해주세요)");
+      const m = s.data() || {}, u = { updatedAt: FV.serverTimestamp() };
+      if (has("fixAdd") || has("fixDel")){
+        const fx = String(m.fixed || "").split(/\s*,\s*/).filter(t => t && (dl.fixDel || []).indexOf(t) < 0).concat(dl.fixAdd || []);
+        u.fixed = Array.from(new Set(fx)).sort().join(", ");
+        if (u.fixed.length > FIXED_MAX) throw fail(FIXED_FULL);
+      }
+      const nk = Object.keys(dl.notes || {});
+      const oldNotes = m.fixNotes != null && (typeof m.fixNotes !== "object" || Array.isArray(m.fixNotes));   // 옛 JSON 글자 → 규칙(is map) 때문에 map 으로 고쳐 쓴다
+      if (nk.length || oldNotes){
+        const nn = cleanFixNotes(m.fixNotes);
+        nk.forEach(k => { const t = String(dl.notes[k] || "").trim(); if (t) nn[k] = t; else delete nn[k]; });
+        u.fixNotes = cleanFixNotes(nn);
+      }
+      if (has("pickAdd") || has("pickDel")){
+        const pk = parsePicks(m.picks || []).filter(t => (dl.pickDel || []).indexOf(t) < 0);
+        (dl.pickAdd || []).forEach(t => { if (pk.indexOf(t) < 0) pk.push(t); });
+        if (pk.length > 20) throw fail("후보는 20개까지예요");
+        u.picks = parsePicks(pk);
+      }
+      tx.update(ref, u);
+      return u;
+    });
+    /* 트랜잭션은 지연 보정이 없다 → 돌려줄 값에 방금 쓴 것을 얹는다 (스냅샷이 곧 따라온다) */
+    const st = buildST();
+    if (st.meet){ if (up.fixed !== undefined) st.meet.fixed = up.fixed; if (up.fixNotes) st.meet.fixNotes = up.fixNotes; }
+    if (up.picks) st.picks = up.picks;
+    return st;
+  }
+
   if (a === "meet_set"){
     const up = { updatedAt: FV.serverTimestamp() };
     if (p.title !== undefined){
@@ -473,7 +512,10 @@ async function doAct(p){
     }
     if (p.place !== undefined) up.place = String(p.place).slice(0, 60);
     if (p.memo  !== undefined) up.memo  = String(p.memo).slice(0, 200);
-    if (p.fixed !== undefined) up.fixed = String(p.fixed).slice(0, 400);    // 여러 개를 ", " 로 (2026-09-28)
+    if (p.fixed !== undefined){                                            // 여러 개를 ", " 로 (2026-09-28)
+      up.fixed = String(p.fixed);
+      if (up.fixed.length > FIXED_MAX) throw fail(FIXED_FULL);              // 잘라 넣으면 마지막 📌 가 반쪽이 된다
+    }
     if (p.fixNotes !== undefined) up.fixNotes = cleanFixNotes(p.fixNotes); // 정한 것마다 코멘트 (2026-10-01)
     if (p.hourStart !== undefined || p.hourEnd !== undefined){
       const hs = clampHour(p.hourStart !== undefined ? p.hourStart : cur.hourStart, 10);
@@ -1585,7 +1627,9 @@ function setDayPicks(d, set, msg){
   if (st !== null) list.push(pickTxt(d, st, prev + 1));
   list.sort();
   if (list.length > 20){ setStatus("후보는 20개까지예요", "err"); return; }
-  act({ action:"meet_set", picks: JSON.stringify(list) }, msg, () => { ST.picks = list.slice(); });
+  const pb = picks();                                // 바뀐 것만 보낸다 (setFixes 와 같은 fixDelta)
+  act({ action:"meet_set", fixDelta: JSON.stringify({ pickAdd: list.filter(t => pb.indexOf(t) < 0), pickDel: pb.filter(t => list.indexOf(t) < 0) }) },
+      msg, () => { ST.picks = list.slice(); });
   renderResult();
 }
 function tapDay(d){
@@ -1611,14 +1655,19 @@ function setFixes(list, msg, notes, pickList){
   const after = v ? v.split(", ") : [];
   const pl = pickList ? Array.from(new Set(pickList)).sort() : null;
   if (pl && pl.length > 20){ setStatus("후보는 20개까지예요", "err"); return; }
+  if (v.length > FIXED_MAX){ setStatus(FIXED_FULL, "err"); return; }      // 잘라 넣으면 마지막 📌 가 반쪽이 된다
   const keep = new Set(after.concat(shownFixes().filter(t => fixes().indexOf(t) < 0), pl || picks()));
   const src = Object.assign({}, fixNotes(), notes || {}), nn = {};
   Object.keys(src).forEach(k => { if (keep.has(k) && src[k]) nn[k] = src[k]; });
   /* 밴드매니저: 📌 정한 게 바뀌면 합주 이력에 '예정' 회차를 만들고 지운다 (+ 코멘트를 이력에) */
   if (typeof onFixesChanged === "function"){ try { onFixesChanged(fixes(), after, nn); } catch(e){} }
-  const p = { action:"meet_set", fixed: v, fixNotes: JSON.stringify(nn) };
-  if (pl) p.picks = JSON.stringify(pl);
-  act(p, msg, () => { if (ST.meet){ ST.meet.fixed = v; ST.meet.fixNotes = nn; } if (pl) ST.picks = pl.slice(); });
+  /* 바뀐 것만 보낸다 — 서버가 지금 값에 얹어 쓴다(doAct 의 fixDelta). 두 사람이 거의 같이 정해도 서로 안 지운다 */
+  const before = fixes(), pb = picks(), on = fixNotes();
+  const dl = { fixAdd: after.filter(t => before.indexOf(t) < 0), fixDel: before.filter(t => after.indexOf(t) < 0), notes: {} };
+  Object.keys(Object.assign({}, on, nn)).forEach(k => { if ((nn[k] || "") !== (on[k] || "")) dl.notes[k] = nn[k] || ""; });
+  if (pl){ dl.pickAdd = pl.filter(t => pb.indexOf(t) < 0); dl.pickDel = pb.filter(t => pl.indexOf(t) < 0); }
+  act({ action:"meet_set", fixDelta: JSON.stringify(dl) }, msg,
+      () => { if (ST.meet){ ST.meet.fixed = v; ST.meet.fixNotes = nn; } if (pl) ST.picks = pl.slice(); });
 }
 function setFixNote(t, note){
   note = String(note || "").replace(/\s+/g, " ").trim().slice(0, FIXNOTE_MAX);
@@ -1791,6 +1840,7 @@ function setFixed(v){
 /* ═══ 날짜 고르기 ═══ */
 let calY = new Date().getFullYear(), calM = new Date().getMonth();
 let dsel = new Set(), dateDirty = false, dateTimer = null;
+let dselBase = new Set();         // 창을 열 때(또는 마지막 저장 때) 목록 — 내가 넣고 뺀 것만 가려낸다
 function paintDowRow(){
   const days = new Date(calY, calM + 1, 0).getDate(), today = todayIso();
   $$("#dowRow button").forEach(b => {
@@ -1890,7 +1940,12 @@ async function saveDates(){
   const list = Array.from(dsel).sort();
   dateDirty = false;
   if (!M){ if (typeof renderNewDates === "function") renderNewDates(); return; }   // 아직 안 만든 약속 — 폼에만 담아둔다 (2026-09-22f)
-  await act({ action:"meet_set", dates: list.join(",") }, "날짜 저장됨", () => { ST.dates = list.slice(); });
+  /* 내가 넣고 뺀 것만 지금 목록(그 사이 남이 바꾼 것 포함)에 얹는다 — 열 때 받은 목록으로 통째 덮지 않게 */
+  const add = list.filter(d => !dselBase.has(d)), del = Array.from(dselBase).filter(d => !dsel.has(d));
+  const merged = cleanDates(dates().filter(d => !del.includes(d)).concat(add));
+  dsel = new Set(merged); dselBase = new Set(merged);
+  if (!$("#calModal").hidden) renderCal();
+  await act({ action:"meet_set", dates: merged.join(",") }, "날짜 저장됨", () => { ST.dates = merged.slice(); });
 }
 
 
@@ -1900,7 +1955,7 @@ $("#saveBtn").onclick = save;
 MODAL_OPEN.heatModal = () => { resFrom = null; resInfo(""); renderResult(); };
 MODAL_OPEN.calModal = () => {
   /* 아직 만들지 않은 약속이면 폼에 담아둔 날짜를 그대로 이어서 고른다 (2026-09-22f) */
-  if (M) dsel = new Set(dates());
+  if (M){ dsel = new Set(dates()); dselBase = new Set(dsel); }
   const first = M ? dates()[0] : Array.from(dsel).sort()[0];
   if (first){ const o = dObj(first); calY = o.getFullYear(); calM = o.getMonth(); }
   else { const o = new Date(); calY = o.getFullYear(); calM = o.getMonth(); }

@@ -596,8 +596,10 @@ function renderAll(){
 
 
 /* ═══ 약속 수정 창 ═══ */
+let setOrig = {};                 // 창을 열 때 값 — '저장' 은 여기서 달라진 칸만 보낸다
 function renderSet(){
   const m = meet() || {};
+  setOrig = { title: m.title || "", place: m.place || "", memo: m.memo || "", fixed: m.fixed || "" };
   $("#s_title").value = m.title || "";
   $("#s_place").value = m.place || "";
   $("#s_memo").value  = m.memo  || "";
@@ -677,12 +679,13 @@ $("#mEdit").onclick       = () => openModal("setModal");
 bindRange($("#n_hs"), $("#n_he"));                                  // 시작·끝을 한 번에 (범위)
 
 $("#s_save").onclick = () => {
-  const p = { action:"meet_set", title:$("#s_title").value.trim(), place:$("#s_place").value.trim(),
-              memo:$("#s_memo").value.trim(), fixed:$("#s_fixed").value.trim() };
-  if (!p.title){ setStatus("약속 이름을 적어주세요", "err"); return; }
-  act(p, "저장됨", () => {
+  /* 고친 칸만 보낸다 — 창을 열어 둔 사이 남이 📌 정하거나 고친 것을 열 때 값으로 되돌리지 않게 */
+  const p = { action:"meet_set" }, ks = ["title","place","memo","fixed"];
+  ks.forEach(k => { const v = $("#s_" + k).value.trim(); if (v !== String(setOrig[k] || "").trim()) p[k] = v; });
+  if (p.title !== undefined && !p.title){ setStatus("약속 이름을 적어주세요", "err"); return; }
+  if (Object.keys(p).length > 1) act(p, "저장됨", () => {
     if (!ST.meet) return;
-    ST.meet.title = p.title; ST.meet.place = p.place; ST.meet.memo = p.memo; ST.meet.fixed = p.fixed;
+    ks.forEach(k => { if (p[k] !== undefined) ST.meet[k] = p[k]; });
   });
   closeModal("setModal");
 };
