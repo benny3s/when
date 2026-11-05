@@ -623,6 +623,8 @@ async function doAct(p){
   if (a === "reset_answers"){
     const b = db.batch();
     Object.values(cur.pid).forEach(pid => b.update(peopleOf(id).doc(pid), { hours: {}, notes: {}, edited: null }));
+    /* 같은 이름 문서가 더 있으면(buildST 의 dup) 지운다 — 안 그러면 합쳐 보여 주느라 지운 응답이 다시 보인다 */
+    Object.values(cur.dup || {}).forEach(ids => ids.forEach(pid => b.delete(peopleOf(id).doc(pid))));
     await b.commit();
     return buildST();
   }
@@ -851,7 +853,10 @@ function renameMe(v){
     if (done || me !== v) return;
     me = from; saveMe(from);
     try { localStorage.setItem("meet_lastname", from); } catch(e){}
-    renderAll();
+    /* absorb 가 실패한 새 이름으로 내 칸을 비웠다 → 원래 이름으로 다시 채운다 (안 그러면 한 날만 저장해도 다른 날 응답이 지워진다).
+       저장 못 한 입력이 있으면 absorb 가 칸을 건드리지 않았으니 force 없이 — 그 입력을 지키려고 (2026-11-05 재검토) */
+    ST.members = members().filter(x => x !== v);
+    loadMine(); renderAll();
   });
   renderAll();
 }
@@ -1563,7 +1568,7 @@ function renderDmAdmin(d){
 }
 
 /* ═══ 저장 ═══ */
-async function save(){
+async function save(leaving){
   if (!me){ setStatus("이름을 먼저 적어주세요", "err"); return; }
   if (saving) return;
   saving = true;
@@ -1590,6 +1595,9 @@ async function save(){
   }
   if (!anyVal && hadBefore){
     saving = false;
+    /* 떠나는 중(saveOnLeave)이면 묻지 않고 보류 — dirty 는 그대로, 돌아와 창을 닫거나 저장을 누를 때 묻는다.
+       숨김 이벤트마다 물으면 뒤 창이 앞 창을 '아니오' 로 닫아 입력이 되돌아간다 (2026-11-05 재검토) */
+    if (leaving === true) return;
     if (!await ask({ title: "입력을 전부 지울까요?", text: "입력한 " + hadBefore + "일을 전부 '미정' 으로 되돌려요.", ok: "되돌리기", danger: true })){
       loadMine(true); renderAll();
       setStatus("그대로 두었습니다", "ok");
@@ -1622,7 +1630,8 @@ async function save(){
     dirty = true; renderAll();
     setStatus("저장 실패 — " + e.message + " (저장을 다시 눌러주세요)", "err");
   } finally { saving = false; }
-  if (again && me) save();     // 실패 뒤에는 다시 보내지 않는다 — 저장 버튼을 띄운다
+  /* 실패 뒤에는 다시 보내지 않는다 — 저장 버튼을 띄운다. 그 날 창이 열려 있으면 닫을 때 저장한다 (closeDay) */
+  if (again && me && $("#dayModal").hidden) save();
 }
 
 /* ═══ 결과 — 위: 담은 후보 / 아래: 직접 고르기 표 하나 ═══
@@ -1986,9 +1995,10 @@ async function saveDates(){
   /* 내가 넣고 뺀 것만 지금 목록(그 사이 남이 바꾼 것 포함)에 얹는다 — 열 때 받은 목록으로 통째 덮지 않게 */
   const add = list.filter(d => !dselBase.has(d)), del = Array.from(dselBase).filter(d => !dsel.has(d));
   const merged = cleanDates(dates().filter(d => !del.includes(d)).concat(add));
-  dsel = new Set(merged); dselBase = new Set(merged);
+  dsel = new Set(merged);
   if (!$("#calModal").hidden) renderCal();
-  await act({ action:"meet_set", dates: merged.join(",") }, "날짜 저장됨", () => { ST.dates = merged.slice(); });
+  const ok = await act({ action:"meet_set", dates: merged.join(",") }, "날짜 저장됨", () => { ST.dates = merged.slice(); });
+  if (ok) dselBase = new Set(merged);            // 실패하면 기준을 그대로 둔다 — 다음 저장에 실패한 날짜가 같이 들어간다
 }
 
 
@@ -2186,7 +2196,7 @@ window.addEventListener("beforeunload", e => { if (dirty){ e.preventDefault(); e
    beforeunload 경고는 카톡·폰에서 믿기 어렵다. 창은 그대로 두고, 닫을 때 바뀐 게 없으면 다시 저장하지 않는다 */
 function saveOnLeave(){
   commitNote();
-  if (dirty && me && M && !saving) save();
+  if (dirty && me && M && !saving) save(true);
 }
 window.addEventListener("pagehide", saveOnLeave);
 /* 폰에서 한참 뒤에 두었다 돌아오면 실시간 연결이 끊겨 있을 수 있다 → 끊겼을 때만 다시 붙는다 */
