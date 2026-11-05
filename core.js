@@ -572,6 +572,8 @@ async function adminList(col){
   } catch(e){ return []; }
 }
 
+/* 규칙이 목록마다 200개까지 — 넘으면 쓰기가 거절된다. 조용히 넘어가면 관리 화면에 새 것이 안 보이니 알린다 */
+const ADMIN_IDX_MAX = 200;
 async function adminTrack(col, id){
   if (!FB_OK || !db || !id) return;
   const k = await ensureAdminKey();
@@ -579,7 +581,11 @@ async function adminTrack(col, id){
   try {
     if (_admIdxCache && Array.isArray(_admIdxCache[col]) && !_admIdxCache[col].includes(id)) _admIdxCache[col].unshift(id);
     await db.collection("adminIdx").doc(k).set({ [col]: FV.arrayUnion(id), updatedAt: FV.serverTimestamp() }, { merge: true });
-  } catch(e){}
+  } catch(e){
+    if (_admIdxCache && Array.isArray(_admIdxCache[col])) _admIdxCache[col] = _admIdxCache[col].filter(x => x !== id);
+    const full = /permission-denied/.test((e && e.code) || "");
+    setStatus("관리자 목록에 못 넣었어요 — " + (full ? "목록이 " + ADMIN_IDX_MAX + "개로 가득 찼을 수 있어요 (관리 화면에서 오래된 걸 지워 주세요)" : errText(e)), "err");
+  }
 }
 
 async function adminUntrack(col, id){
