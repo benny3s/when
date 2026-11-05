@@ -286,7 +286,7 @@ function onLive(){
 }
 function buildST(){
   const out = { meet: null, members: [], dates: [], hourStart: 10, hourEnd: 22,
-                windows: {}, hours: {}, notes: {}, edited: {}, picks: [], pid: {} };
+                windows: {}, hours: {}, notes: {}, edited: {}, picks: [], pid: {}, dup: {} };
   const m = live.meet;
   if (!m){ if (live.meetState === "gone") out.gone = true; return out; }
   out.meet = { id: live.id, title: m.title || "", place: m.place || "", memo: m.memo || "",
@@ -300,19 +300,31 @@ function buildST(){
   out.dowWin  = parseDowWin(m.dowWin || {});
   out.picks   = parsePicks(m.picks || []);
   const ms = t => (t && t.toMillis) ? t.toMillis() : Infinity;
+  const byName = new Map();
   (live.people || []).slice().sort((a, b) => ms(a.added) - ms(b.added)).forEach(p => {
     const n = String(p.name || "").trim();
-    if (!n || out.pid[n]) return;                  // 같은 이름이 둘이면 먼저 들어온 쪽
-    out.pid[n] = p._id;
+    if (!n) return;
+    if (!byName.has(n)) byName.set(n, []);
+    byName.get(n).push(p);
+  });
+  byName.forEach((list, n) => {
+    out.pid[n] = list[0]._id;                      // 같은 이름이 둘이면 먼저 들어온 쪽에 쓴다
+    /* 두 기기가 거의 같이 만들어 같은 이름 문서가 둘 이상이면 — 나머지 id 를 기억하고(빼기·이름 바꾸기·저장 때 합친다)
+       응답은 합쳐 보여 준다. 같은 날을 둘 다 가졌으면 나중에 고친 문서 값 */
+    if (list.length > 1) out.dup[n] = list.slice(1).map(p => p._id);
     /* 이 시간표에서 뺀 사람(off)은 명단·표·결과·인원에서 빠진다. 입력은 지우지 않는다 → 다시 켜면 그대로 (2026-09-30) */
     if (out.meet.off.includes(n)) return;
     out.members.push(n);
-    const H = {}, N = {};
-    for (const d in (p.hours || {})) if (Array.isArray(p.hours[d])) H[d] = cleanHours(p.hours[d]);
-    for (const d in (p.notes || {})) if (p.notes[d]) N[d] = String(p.notes[d]);
+    const H = {}, N = {}, edMs = p => (p.edited && p.edited.toMillis) ? p.edited.toMillis() : 0;
+    let e = "";
+    list.slice().sort((a, b) => edMs(a) - edMs(b)).forEach(p => {
+      for (const d in (p.hours || {})) if (Array.isArray(p.hours[d])) H[d] = cleanHours(p.hours[d]);
+      for (const d in (p.notes || {})) if (p.notes[d]) N[d] = String(p.notes[d]);
+      const s = stampOf(p.edited); if (s > e) e = s;
+    });
     if (Object.keys(H).length) out.hours[n] = H;
     if (Object.keys(N).length) out.notes[n] = N;
-    const e = stampOf(p.edited); if (e) out.edited[n] = e;
+    if (e) out.edited[n] = e;
   });
   /* 페이지가 순서를 정해 주면 따른다 (밴드매니저: 밴드 멤버 순서) — 없는 이름은 뒤에 원래 순서대로 */
   if (typeof memberOrder === "function"){
@@ -544,12 +556,20 @@ async function doAct(p){
     if (!from || !to) throw fail("이름이 필요합니다");
     if (cur.pid[to]) throw fail("이미 있는 이름입니다");
     if (!cur.pid[from]) throw fail("없는 사람입니다");
-    await peopleOf(id).doc(cur.pid[from]).update({ name: to });
+    /* 같은 이름 문서가 둘 이상이면 같이 바꾼다 (buildST 의 dup) */
+    const b = db.batch();
+    [cur.pid[from]].concat((cur.dup || {})[from] || []).forEach(pid => b.update(peopleOf(id).doc(pid), { name: to }));
+    await b.commit();
     return buildST();
   }
   if (a === "member_remove"){
     const n = String(p.name || "").trim();
-    if (cur.pid[n]) await peopleOf(id).doc(cur.pid[n]).delete();
+    if (cur.pid[n]){
+      /* 같은 이름 문서가 둘 이상이면 같이 지운다 — 안 그러면 빼고 나서 숨어 있던 쪽이 다시 나타난다 */
+      const b = db.batch();
+      [cur.pid[n]].concat((cur.dup || {})[n] || []).forEach(pid => b.delete(peopleOf(id).doc(pid)));
+      await b.commit();
+    }
     return buildST();
   }
 
@@ -571,6 +591,21 @@ async function doAct(p){
       const args = [];
       for (const d in ph) if (normDate(d)) args.push(new FP("hours", d), ph[d] === null ? FV.delete() : cleanHours(ph[d]));
       for (const d in pn) if (normDate(d)){ const t = String(pn[d] || "").trim().slice(0, 200); args.push(new FP("notes", d), t ? t : FV.delete()); }
+      /* 같은 이름 문서가 더 있으면(buildST 의 dup) 이 문서로 합치고 지운다 — 보내지 않은 날짜의 응답·이유는
+         화면에 보이던 값(나중에 고친 문서 쪽)을 옮겨 온다 */
+      const dups = (cur.dup || {})[name] || [];
+      if (dups.length){
+        const docs = live.people || [], mine = docs.find(x => x._id === pid) || {};
+        const edMs = x => (x.edited && x.edited.toMillis) ? x.edited.toMillis() : 0;
+        const mh = {}, mn = {}, same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+        docs.filter(x => x._id === pid || dups.includes(x._id)).sort((x, y) => edMs(x) - edMs(y)).forEach(x => {
+          for (const d in (x.hours || {})) if (Array.isArray(x.hours[d])) mh[d] = cleanHours(x.hours[d]);
+          for (const d in (x.notes || {})) if (x.notes[d]) mn[d] = String(x.notes[d]).slice(0, 200);
+          if (x._id !== pid) b.delete(peopleOf(id).doc(x._id));
+        });
+        for (const d in mh) if (normDate(d) && !(d in ph) && !same(mh[d], (mine.hours || {})[d])) args.push(new FP("hours", d), mh[d]);
+        for (const d in mn) if (normDate(d) && !(d in pn) && mn[d] !== (mine.notes || {})[d]) args.push(new FP("notes", d), mn[d]);
+      }
       args.push("edited", FV.serverTimestamp());
       b.update.apply(b, [peopleOf(id).doc(pid)].concat(args));
     }
@@ -693,10 +728,12 @@ async function act(params, okMsg, applyLocal){
     ST = await api(Object.assign({ m: M }, params));
     pendDone(pend); pendReplay(); absorb();
     setStatus(okMsg || "완료", "ok");
+    return true;
   } catch(e){
     pendDone(pend);
     if (backup){ ST = JSON.parse(backup); pendReplay(); absorb(); }
     setStatus("실패 — " + e.message, "err");
+    return false;               // 부르는 쪽이 ST 밖에서 바꾼 것(me 등)을 되돌릴 수 있게
   }
 }
 function absorb(){
@@ -809,6 +846,12 @@ function renameMe(v){
       const o = ST[k];
       if (o && Object.prototype.hasOwnProperty.call(o, from)){ o[v] = o[from]; delete o[from]; }
     });
+  }).then(done => {
+    /* 실패하면 ST 는 act 가 되돌린다 — me 도 원래 이름으로 (안 그러면 다음 저장이 그 이름의 다른 사람 문서를 고친다) */
+    if (done || me !== v) return;
+    me = from; saveMe(from);
+    try { localStorage.setItem("meet_lastname", from); } catch(e){}
+    renderAll();
   });
   renderAll();
 }

@@ -613,21 +613,25 @@ function renderSet(){
     const rn = document.createElement("button"); rn.className = "btn ghost sm"; rn.textContent = "이름변경";
     rn.onclick = async () => {
       let to = await askText({ title: "새 이름", value: n, ok: "바꾸기", maxlength: 12 }); to = (to || "").trim(); if (!to || to === n) return;
-      act({ action:"member_rename", from:n, to }, "이름 변경됨", () => {
+      const wasMe = me === n;
+      const done = await act({ action:"member_rename", from:n, to }, "이름 변경됨", () => {
         ST.members = ST.members.map(x => x === n ? to : x);
         ["hours","notes"].forEach(k => { if (ST[k] && ST[k][n]){ ST[k][to] = ST[k][n]; delete ST[k][n]; } });
         if (ST.edited && ST.edited[n]){ ST.edited[to] = ST.edited[n]; delete ST.edited[n]; }
         if (me === n){ me = to; }
       });
+      if (!done && wasMe && me === to){ me = n; renderAll(); }   // 실패 — ST 는 act 가 되돌린다, me 도 원래대로
     };
     const rm = document.createElement("button"); rm.className = "btn ghost sm danger"; rm.textContent = "빼기";
     rm.onclick = async () => {
       if (!await ask({ title: n + " 님을 뺄까요?", text: "그 사람이 칠한 것도 같이 지워져요.", ok: "빼기", danger: true })) return;
-      act({ action:"member_remove", name:n }, n + " 님 뺐습니다", () => {
+      const wasMe = me === n;
+      const done = await act({ action:"member_remove", name:n }, n + " 님 뺐습니다", () => {
         ST.members = ST.members.filter(x => x !== n);
         ["hours","notes","edited"].forEach(k => { if (ST[k]) delete ST[k][n]; });
         if (me === n){ me = ""; }
       });
+      if (!done && wasMe && !me){ me = n; loadMine(true); renderAll(); }   // 실패 — me 도 원래대로
     };
     row.append(nm, sp, rn, rm); box.appendChild(row);
   });
