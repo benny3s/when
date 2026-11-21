@@ -732,3 +732,6 @@ table.sheet th.pastcol button{appearance:none;border:0;background:transparent;fo
 .fbctx #fbCtx{white-space:pre-wrap;word-break:break-all;color:var(--ink)}
 .btn.kakao{background:#FEE500;border-color:#FEE500;color:#191919;text-decoration:none}
 .fbwrap.aftermore{margin:8px 0 0}
+.fbalt{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);text-align:center;font-size:12.5px}
+.fbalt a{color:var(--muted);text-decoration:none;font-weight:600}
+.fbalt a:hover{color:var(--ink);text-decoration:underline}

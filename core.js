@@ -29,20 +29,24 @@ const CORE_HTML = `<!-- ══════════ 시간 고르기 (작은 
     </div>
   </div>
 </div>
-<!-- ══════════ 의견 보내기 — 카카오톡 채널 1:1 채팅으로 (2026-10-10, 세 앱 공통)
-     채널로 가면 Benny 폰에 알림이 오고 답장도 할 수 있다. 어느 앱·어느 화면인지는 복사해서 붙여넣게 ══════════ -->
+<!-- ══════════ 의견 보내기 — 앱 안에서 바로 전송 → 베니 비서 즉시 알림 (2026-11-21, 4개 앱 공통)
+     Firestore feedback/{auto} 에 저장(쓰기만 허용) → PC pc-bridge 가 감지해 폰 베니 비서로 푸시.
+     사진 첨부·1:1 대화가 필요하면 아래 카톡 채널 링크도 그대로 이용 가능 ══════════ -->
 <div class="modal" id="fbModal" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:420px">
     <div class="spread" style="margin-bottom:6px">
       <h2 style="margin:0;font-size:18px">💬 의견 보내기</h2>
       <button class="iconbtn" type="button" data-close aria-label="닫기">✕</button>
     </div>
-    <p style="margin:0 0 10px;line-height:1.55">불편한 점, 안 되는 것, 있었으면 하는 기능 — 무엇이든 카카오톡으로 보내 주세요. 답장도 드려요.</p>
-    <div class="fbctx"><span class="k">이 화면 정보 — 버튼을 누르면 복사돼요. 채팅에 붙여넣어 주시면 더 빨리 고칠 수 있어요</span><div id="fbCtx"></div></div>
+    <p class="hint" style="margin:0 0 10px;line-height:1.5">불편한 점, 안 되는 것, 있었으면 하는 기능을 적어 주세요. 보내면 개발자(베니)에게 바로 알림이 가요.</p>
+    <label class="fld" style="margin-top:0"><span>보내는 사람 (선택)</span><input type="text" id="fbWho" maxlength="30" placeholder="이름 또는 닉네임 (비워도 돼요)"></label>
+    <label class="fld"><span>내용</span><textarea id="fbText" maxlength="1000" rows="4" placeholder="여기에 바로 적어 주세요"></textarea></label>
+    <div class="fbctx" style="margin-top:8px"><span class="k">자동으로 같이 전달되는 화면 정보</span><div id="fbCtx"></div></div>
     <div class="row" style="gap:8px;justify-content:flex-end;margin-top:12px">
       <button class="btn ghost" type="button" data-close>닫기</button>
-      <a class="btn kakao" id="fbGo" target="_blank" rel="noopener">카카오톡으로 보내기</a>
+      <button class="btn primary" type="button" id="fbSend">📨 바로 보내기</button>
     </div>
+    <div class="fbalt"><a id="fbGo" target="_blank" rel="noopener">사진 첨부 · 1:1 대화는 카카오톡 채널로 →</a></div>
   </div>
 </div>
 <div class="statusbar" id="statusbar">
@@ -410,13 +414,36 @@ MODAL_AFTER.askModal = () => {              // ✕·취소·바깥·뒤로가기
   afterBack(() => r(v));
 };
 
-/* ═══ 의견 보내기 — 맨 아래(#foot 위) 작은 버튼 → fbModal → 카카오톡 채널 1:1 채팅 ═══ */
+/* ═══ 의견 보내기 — 맨 아래(#foot 위) 작은 버튼 → fbModal → Firestore feedback → 베니 비서 즉시 알림 (2026-11-21) ═══ */
 const FEEDBACK_CHAT = "https://pf.kakao.com/_axijrX/chat";
-function feedbackCtx(){
+function feedbackAppName(){
+  const p = location.pathname || "";
+  if (/\/band-manager(?:\/|$)/.test(p)) return "밴드매니저";
+  if (/\/when(?:\/|$)/.test(p)) return "약속 잡자";
+  if (/\/trip(?:\/|$)/.test(p)) return "여행 가자";
+  if (/\/wishtag(?:\/|$)/.test(p)) return "위시태그";
+  return document.title.split("—").pop().trim().slice(0, 30) || "웹앱";
+}
+function feedbackInfo(){
   const ua = navigator.userAgent || "";
   const env = /KAKAOTALK/i.test(ua) ? "카톡 안 브라우저" : /Android/i.test(ua) ? "안드로이드" : /iPhone|iPad/i.test(ua) ? "아이폰" : "PC";
-  const ver = typeof BUILD !== "undefined" ? BUILD : "";
-  return "[" + document.title + "] " + ver + " · " + env + "\n" + location.href.split("#")[0];
+  const ver = typeof BUILD !== "undefined" ? String(BUILD) : "";
+  const title = (typeof window.FEEDBACK_TITLE === "function" ? window.FEEDBACK_TITLE() : document.title) || document.title;
+  const url = location.href.split("#")[0];
+  return { app: feedbackAppName(), title: String(title).slice(0, 80), ver: ver.slice(0, 30), env, url: url.slice(0, 300) };
+}
+function feedbackWho(){
+  try {
+    if (typeof window.FEEDBACK_WHO === "function"){ const w = String(window.FEEDBACK_WHO() || "").trim(); if (w) return w.slice(0, 30); }
+    if (typeof me === "string" && me.trim()) return me.trim().slice(0, 30);
+    const last = localStorage.getItem("fb_who") || localStorage.getItem("meet_lastname") || "";
+    if (last.trim()) return last.trim().slice(0, 30);
+  } catch(e){}
+  return "";
+}
+function feedbackCtx(){
+  const i = feedbackInfo();
+  return "[" + i.title + "] " + i.ver + " · " + i.env + "\n" + i.url;
 }
 (function(){
   const foot = document.getElementById("foot"); if (!foot) return;
@@ -425,8 +452,36 @@ function feedbackCtx(){
   const more = document.querySelector("p.more"), fw = foot.previousElementSibling;
   if (more){ more.after(fw); fw.after(foot); fw.classList.add("aftermore"); }
   $("#fbGo").href = FEEDBACK_CHAT;
-  $("#fbBtn").onclick = () => { $("#fbCtx").textContent = feedbackCtx(); openModal("fbModal"); };
-  $("#fbGo").addEventListener("click", () => {        // 누르는 순간 복사 (링크 이동은 그대로)
+  $("#fbBtn").onclick = () => {
+    $("#fbCtx").textContent = feedbackCtx();
+    if (!$("#fbWho").value.trim()) $("#fbWho").value = feedbackWho();
+    openModal("fbModal");
+    setTimeout(() => { try { $("#fbText").focus(); } catch(e){} }, 80);
+  };
+  $("#fbSend").onclick = async () => {
+    const text = $("#fbText").value.trim();
+    if (!text){ setStatus("의견 내용을 적어주세요", "err"); try { $("#fbText").focus(); } catch(e){} return; }
+    if (!FB_OK || !db){ setStatus("저장소에 연결되지 않았어요 — 아래 카톡 채널로 보내 주세요", "err"); return; }
+    const btn = $("#fbSend"); if (btn.disabled) return;
+    btn.disabled = true; btn.textContent = "보내는 중…";
+    try {
+      const info = feedbackInfo();
+      const who = $("#fbWho").value.trim().slice(0, 30);
+      if (who) try { localStorage.setItem("fb_who", who); } catch(e){}
+      await db.collection("feedback").add({
+        app: info.app, title: info.title, ver: info.ver, env: info.env, url: info.url,
+        who, text: text.slice(0, 1000), at: FV.serverTimestamp()
+      });
+      $("#fbText").value = "";
+      closeModal("fbModal");
+      setStatus("의견을 보냈어요 — 베니에게 바로 알림이 갔어요 ✓", "ok");
+    } catch(e){
+      setStatus("보내지 못했어요 — " + errText(e), "err");
+    } finally {
+      btn.disabled = false; btn.textContent = "📨 바로 보내기";
+    }
+  };
+  $("#fbGo").addEventListener("click", () => {        // 카톡 채널로 갈 땐 화면 정보 복사
     const t = $("#fbCtx").textContent;
     try { navigator.clipboard.writeText(t).catch(() => {}); } catch(e){}
     setTimeout(() => closeModal("fbModal"), 300);
